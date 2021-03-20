@@ -9,9 +9,32 @@ function palve(url, query, callback) {
   xhr.responseType = "json";
 
   xhr.send();
+    request.onreadystatechange = function () {
+      const responseData =
+        !config.responseType || config.responseType === "text"
+          ? request.responseText
+          : request.response;
 
-  xhr.onload = () => callback(null, xhr);
-  xhr.onerror = () => callback(new Error("Request failed"));
+      const response = {
+        data: responseData,
+        status: request.status,
+        statusText: request.statusText,
+        // headers: responseHeaders,
+      };
+      if (request.readyState === XMLHttpRequest.DONE) {
+        if (request.readyState === 4 || request.status === 200) {
+          resolve(response);
+        } else {
+          reject(
+            new Error(
+              "Request failed with status code " + response.status,
+              null,
+              response
+            )
+          );
+        }
+      }
+    };
 
   //   xhr.onprogress = function (event) {
   //     if (event.lengthComputable) {
