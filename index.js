@@ -1,14 +1,18 @@
-function palve(url, query, callback) {
-  const xhr = new XMLHttpRequest();
-  const link = new URL(url);
+const REQUEST_METHODS = ["get"];
 
-  link.searchParams.set();
+/**
+ *
+ * @param {*} config
+ * @returns Promise
+ */
+function requestP(config) {
+  return new Promise((resolve, reject) => {
+    let request = new XMLHttpRequest();
 
-  xhr.open("GET", link);
+    request.open(config.method, config.url, true);
 
-  xhr.responseType = "json";
+    request.responseType = config.responseType;
 
-  xhr.send();
     request.onreadystatechange = function () {
       const responseData =
         !config.responseType || config.responseType === "text"
@@ -36,29 +40,43 @@ function palve(url, query, callback) {
       }
     };
 
-  //   xhr.onprogress = function (event) {
-  //     if (event.lengthComputable) {
-  //       console.log(`Received ${event.loaded} of ${event.total} bytes`);
-  //     } else {
-  //       console.log(`Received ${event.loaded} bytes`); // no Content-Length
-  //     }
-  //   };
+    request.send();
+  });
 }
 
-palve(
-  "https://jsonplaceholder.typicode.com/posts",
-  {
-    query: {
-      postId: 1,
-    },
-  },
-  async function (error, { status, response }) {
-    if (error) {
-      // handle error
-      console.log(error);
-    } else {
-      // script loaded successfully
-      console.log(status, response);
-    }
-  }
-);
+requestP({
+  method: "GET",
+  url: "https://jsonplaceholder.typicode.com/comments?postId=1",
+  responseType: "json",
+})
+  .then(function (response) {
+    console.log(response);
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+
+// function validateAndMerge(...sources) {
+//   for (const source of sources) {
+//     if (
+//       (!isObject(source) || Array.isArray(source)) &&
+//       typeof source !== "undefined"
+//     ) {
+//       throw new TypeError("The `options` argument must be an object");
+//     }
+//   }
+
+//     return deepMerge({}, ...sources);
+// }
+
+// function createInstance(defaults) {
+//   const palve = (input, options) =>
+//     new palve(input, validateAndMerge(defaults, options));
+
+//   for (const method of REQUEST_METHODS) {
+//     palve[method] = (input, options) =>
+//       new palve(input, validateAndMerge(defaults, options, { method }));
+//   }
+
+//   return palve;
+// }
