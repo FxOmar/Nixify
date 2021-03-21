@@ -1,4 +1,20 @@
-const REQUEST_METHODS = ["get"];
+"use strict";
+
+function createErrorMessage(message, status, request, response) {
+  const error = new Error(message);
+
+  return {
+    statusCode: status,
+    message: error,
+    request: request,
+    response: response,
+  };
+}
+
+function parseHeader(header) {
+  let headerFilter = header.replace(/(?:\r\n|\r|\n)/g, ", ");
+  console.log(JSON.parse(JSON.stringify({ headerFilter })));
+}
 
 /**
  *
@@ -23,21 +39,27 @@ function requestP(config) {
         data: responseData,
         status: request.status,
         statusText: request.statusText,
-        // headers: responseHeaders,
+        headers: parseHeader(request.getAllResponseHeaders()),
       };
-      if (request.readyState === XMLHttpRequest.DONE) {
-        if (request.readyState === 4 || request.status === 200) {
+
+      if (request.readyState === XMLHttpRequest.DONE && response.status !== 0) {
+        if (request.status === 200) {
           resolve(response);
         } else {
           reject(
-            new Error(
+            createErrorMessage(
               "Request failed with status code " + response.status,
-              null,
+              response.status,
+              config,
               response
             )
           );
         }
       }
+    };
+
+    request.onerror = function () {
+      throw new Error("Request failed");
     };
 
     request.send();
@@ -55,6 +77,17 @@ requestP({
   .catch(function (error) {
     console.log(error);
   });
+
+// async function getPosts() {
+//   const res = await requestP({
+//     method: "GET",
+//     url: "https://jsonplaceholder.typicode.com/comments?postId=1",
+//     responseType: "json",
+//   });
+
+//   console.log(res.data);
+// }
+// getPosts();
 
 // function validateAndMerge(...sources) {
 //   for (const source of sources) {
