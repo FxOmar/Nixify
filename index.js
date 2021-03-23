@@ -1,5 +1,13 @@
 "use strict";
 
+/**
+ *
+ * @param {*} message
+ * @param {*} status
+ * @param {*} request
+ * @param {*} response
+ * @returns Error message with server response
+ */
 function createErrorMessage(message, status, request, response) {
   const error = new Error(message);
 
@@ -11,9 +19,23 @@ function createErrorMessage(message, status, request, response) {
   };
 }
 
+/**
+ *
+ * @param {*} header
+ * @returns headers parse as an object
+ */
 function parseHeader(header) {
-  let headerFilter = header.replace(/(?:\r\n|\r|\n)/g, ", ");
-  console.log(JSON.parse(JSON.stringify({ headerFilter })));
+  const headers = {};
+
+  header
+    .trim()
+    .split(/[\r\n]+/)
+    .map((value) => value.split(/: /))
+    .forEach((keyValue) => {
+      headers[keyValue[0].trim()] = keyValue[1].trim();
+    });
+
+  return headers;
 }
 
 /**
@@ -38,7 +60,6 @@ function requestP(config) {
       const response = {
         data: responseData,
         status: request.status,
-        statusText: request.statusText,
         headers: parseHeader(request.getAllResponseHeaders()),
       };
 
