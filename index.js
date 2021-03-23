@@ -1,22 +1,55 @@
 "use strict";
 
 /**
+ * Update an Error with the specified config, error code, and response.
  *
- * @param {*} message
- * @param {*} status
- * @param {*} request
- * @param {*} response
- * @returns Error message with server response
+ * @param {Error} error The error to update.
+ * @param {Object} config The config.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The error.
  */
-function createErrorMessage(message, status, request, response) {
-  const error = new Error(message);
+function enhanceError(error, config, code, request, response) {
+  error.config = config;
+  if (code) error.code = code;
 
-  return {
-    statusCode: status,
-    message: error,
-    request: request,
-    response: response,
-  };
+  error.request = request;
+  error.response = response;
+  error.isAxiosError = true;
+
+  error.toJSON = () => ({
+    // Standard
+    message: this.message,
+    name: this.name,
+    // Microsoft
+    description: this.description,
+    number: this.number,
+    // Mozilla
+    fileName: this.fileName,
+    lineNumber: this.lineNumber,
+    columnNumber: this.columnNumber,
+    stack: this.stack,
+    // Axios
+    config: this.config,
+    code: this.code,
+  });
+  return error;
+}
+
+/**
+ * Create an Error with the specified message, config, error code, request and response.
+ *
+ * @param {string} message The error message.
+ * @param {Object} config The config.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The created error.
+ */
+function createError(message, config, code, request, response) {
+  const error = new Error(message);
+  return enhanceError(error, config, code, request, response);
 }
 
 /**
@@ -51,46 +84,60 @@ function requestP(config) {
 
     request.responseType = config.responseType;
 
+    request.timeout = config.timeout;
+
     request.onreadystatechange = function () {
       const responseData =
         !config.responseType || config.responseType === "text"
           ? request.responseText
           : request.response;
 
-      const response = {
-        data: responseData,
-        status: request.status,
-        headers: parseHeader(request.getAllResponseHeaders()),
-      };
+      if (request.readyState === XMLHttpRequest.DONE && request.status !== 0) {
+        const response = {
+          data: responseData,
+          status: request.status,
+          headers: parseHeader(request.getAllResponseHeaders()),
+          config: config,
+          request: request,
+        };
 
-      if (request.readyState === XMLHttpRequest.DONE && response.status !== 0) {
         if (request.status === 200) {
           resolve(response);
         } else {
           reject(
-            createErrorMessage(
+            createError(
               "Request failed with status code " + response.status,
-              response.status,
-              config,
+              response.config,
+              null,
+              response.request,
               response
             )
           );
+          request = null;
         }
       }
     };
 
-    request.onerror = function () {
-      throw new Error("Request failed");
-    };
+    request.ontimeout = function (e) {
+      reject(
+        createError(
+          "timeout of " + config.timeout + "ms exceeded",
+          config,
+          "ECONNABORTED"
+        )
+      );
 
+      request = null;
+    };
     request.send();
   });
 }
 
 requestP({
-  method: "GET",
+  method: "get",
   url: "https://jsonplaceholder.typicode.com/comments?postId=1",
   responseType: "json",
+  timeout: 1,
 })
   .then(function (response) {
     console.log(response);
