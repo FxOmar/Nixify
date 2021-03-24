@@ -84,6 +84,8 @@ function requestP(config) {
   return new Promise((resolve, reject) => {
     let request = new XMLHttpRequest();
 
+    console.log(config);
+
     request.open(config.method, config.url, true);
 
     request.responseType = config.responseType;
@@ -91,34 +93,36 @@ function requestP(config) {
     request.timeout = config.timeout;
 
     request.onreadystatechange = function () {
+      if (request.readyState !== XMLHttpRequest.DONE || request.status === 0) {
+        return;
+      }
+
       const responseData =
         !config.responseType || config.responseType === "text"
           ? request.responseText
           : request.response;
 
-      if (request.readyState === XMLHttpRequest.DONE && request.status !== 0) {
-        const response = {
-          data: responseData,
-          status: request.status,
-          headers: parseHeader(request.getAllResponseHeaders()),
-          config: config,
-          request: request,
-        };
+      const response = {
+        data: responseData,
+        status: getStatus(request.status),
+        headers: parseHeader(request.getAllResponseHeaders()),
+        config: config,
+        request: request,
+      };
 
-        if (request.status === 200) {
-          resolve(response);
-        } else {
-          reject(
-            createError(
-              "Request failed with status code " + response.status,
-              response.config,
-              null,
-              response.request,
-              response
-            )
-          );
-          request = null;
-        }
+      if (request.status === 200) {
+        resolve(response);
+      } else {
+        reject(
+          createError(
+            "Request failed with status code " + response.status,
+            response.config,
+            null,
+            response.request,
+            response
+          )
+        );
+        request = null;
       }
     };
 
@@ -127,27 +131,19 @@ function requestP(config) {
         createError(
           "timeout of " + config.timeout + "ms exceeded",
           config,
-          "ECONNABORTED"
+          "ECONNABORTED",
+          null,
+          null
         )
       );
 
       request = null;
     };
+
     request.send();
   });
 }
 
-requestP({
-  method: "get",
-  url: "https://jsonplaceholder.typicode.com/comments?postId=1",
-  responseType: "json",
-  timeout: 1,
-})
-  .then(function (response) {
-    console.log(response);
-  })
-  .catch(function (error) {
-    console.log(error);
 const REQUEST_METHODS = ["get", "post", "put"];
 
 /**
@@ -163,7 +159,24 @@ function createInstance() {
   return requestP;
 }
 const requestPa = createInstance();
+
+requestPa
+  .get("https://jsonplaceholder.typicode.com/comments?postId=1")
+  .then((re) => {
+    console.log(re);
   });
+
+// requestP({
+//   method: "get",
+//   url: "https://jsonplaceholder.typicode.com/comments?postId=1",
+//   responseType: "json",
+// })
+//   .then(function (response) {
+//     console.log(response);
+//   })
+//   .catch(function (error) {
+//     console.log(error);
+//   });
 
 // async function getPosts() {
 //   const res = await requestP({
@@ -175,28 +188,3 @@ const requestPa = createInstance();
 //   console.log(res.data);
 // }
 // getPosts();
-
-// function validateAndMerge(...sources) {
-//   for (const source of sources) {
-//     if (
-//       (!isObject(source) || Array.isArray(source)) &&
-//       typeof source !== "undefined"
-//     ) {
-//       throw new TypeError("The `options` argument must be an object");
-//     }
-//   }
-
-//     return deepMerge({}, ...sources);
-// }
-
-// function createInstance(defaults) {
-//   const palve = (input, options) =>
-//     new palve(input, validateAndMerge(defaults, options));
-
-//   for (const method of REQUEST_METHODS) {
-//     palve[method] = (input, options) =>
-//       new palve(input, validateAndMerge(defaults, options, { method }));
-//   }
-
-//   return palve;
-// }
