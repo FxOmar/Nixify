@@ -148,6 +148,21 @@ requestP({
   })
   .catch(function (error) {
     console.log(error);
+const REQUEST_METHODS = ["get", "post", "put"];
+
+/**
+ *
+ * @param {*} defaults
+ * @returns
+ */
+function createInstance() {
+  for (const method of REQUEST_METHODS) {
+    requestP[method] = () => requestP({ method: method });
+  }
+
+  return requestP;
+}
+const requestPa = createInstance();
   });
 
 // async function getPosts() {
