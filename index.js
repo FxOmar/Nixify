@@ -71,6 +71,10 @@ function parseHeader(header) {
   return headers;
 }
 
+function getStatus(status) {
+  return status === 1223 ? 204 : status; // IE9 fix
+}
+
 /**
  *
  * @param {*} config
