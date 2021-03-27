@@ -84,8 +84,6 @@ function requestP(config) {
   return new Promise((resolve, reject) => {
     let request = new XMLHttpRequest();
 
-    console.log(config);
-
     request.open(config.method, config.url, true);
 
     request.responseType = config.responseType;
@@ -146,25 +144,155 @@ function requestP(config) {
 
 const REQUEST_METHODS = ["get", "post", "put"];
 
+const isObject = (value) => value !== null && typeof value === "object";
+
+const deepMerge = (...sources) => {
+  let returnValue = {};
+  let headers = {};
+
+  for (const source of sources) {
+    if (Array.isArray(source)) {
+      if (!Array.isArray(returnValue)) {
+        returnValue = [];
+      }
+
+      returnValue = [...returnValue, ...source];
+    } else if (isObject(source)) {
+      for (let [key, value] of Object.entries(source)) {
+        if (isObject(value) && key in returnValue) {
+          value = deepMerge(returnValue[key], value);
+        }
+
+        returnValue = { ...returnValue, [key]: value };
+      }
+
+      if (isObject(source.headers)) {
+        headers = mergeHeaders(headers, source.headers);
+      }
+    }
+
+    returnValue.headers = headers;
+  }
+
+  return returnValue;
+};
+
+const validateAndMerge = (...sources) => {
+  for (const source of sources) {
+    if (
+      (!isObject(source) || Array.isArray(source)) &&
+      typeof source !== "undefined"
+    ) {
+      throw new TypeError("The `options` argument must be an object");
+    }
+  }
+
+  return deepMerge({}, ...sources);
+};
+
 /**
  *
  * @param {*} defaults
  * @returns
  */
-function createInstance() {
+const createInstance = (defaults) => {
   for (const method of REQUEST_METHODS) {
-    requestP[method] = () => requestP({ method: method });
+    requestP[method] = (input) =>
+      requestP(validateAndMerge(input, defaults, { method }));
   }
 
   return requestP;
-}
+};
 const requestPa = createInstance();
 
-requestPa
-  .get("https://jsonplaceholder.typicode.com/comments?postId=1")
-  .then((re) => {
-    console.log(re);
+function inputElement(text, type) {
+  const input = document.createElement(type);
+  if (type === "input") {
+    input.setAttribute("type", "text");
+  } else {
+    input.setAttribute("rows", "10");
+    input.setAttribute("cols", "50");
+  }
+
+  input.value += text;
+
+  return input;
+}
+
+function replaceElements(props) {
+  const input = inputElement(props.text, props.typeOf);
+  if (props.typeOf) {
+    props.el.replaceWith(input);
+  }
+}
+
+function handleClickElements(el) {
+  document.addEventListener("click", (evt) => {
+    let targetElement = evt.target; // clicked element
+
+    const type = el.tagName === "P" ? "textarea" : "input";
+
+    do {
+      if (targetElement == el) {
+        const props = { el: el, text: el.textContent, typeOf: type };
+        replaceElements(props);
+        return;
+      }
+      // Go up the DOM
+      targetElement = targetElement.parentNode;
+    } while (targetElement);
+
+    // This is a click outside.
+    const input = document.getElementsByTagName(type);
+    input[0].replaceWith(el);
   });
+}
+
+function createElement(elements, id) {
+  const parentDiv = document.createElement("div");
+
+  for (const [key, value] of Object.entries(elements)) {
+    const el = document.createElement(key);
+    el.textContent = value;
+
+    parentDiv.setAttribute("id", id);
+    parentDiv.appendChild(el);
+
+    el.onclick = function (event) {
+      handleClickElements(el);
+    };
+  }
+
+  document.getElementById("posts").appendChild(parentDiv);
+}
+
+async function getPosts(path) {
+  const url = new URL("https://jsonplaceholder.typicode.com/posts/");
+  url.pathname += path ? path : "";
+
+  const res = await requestP({
+    method: "get",
+    url: url,
+    responseType: "json",
+  });
+
+  const data =
+    typeof res.data === "object" && Array.isArray(res.data) && res.data !== null
+      ? res.data
+      : [res.data];
+
+  data.forEach(({ title, body, id }) => {
+    createElement({ h1: title, p: body }, id);
+  });
+}
+
+getPosts();
+
+// requestPa
+//   .get("https://jsonplaceholder.typicode.com/comments?postId=1")
+//   .then((re) => {
+//     console.log(re);
+//   });
 
 // requestP({
 //   method: "get",
@@ -177,14 +305,3 @@ requestPa
 //   .catch(function (error) {
 //     console.log(error);
 //   });
-
-// async function getPosts() {
-//   const res = await requestP({
-//     method: "GET",
-//     url: "https://jsonplaceholder.typicode.com/comments?postId=1",
-//     responseType: "json",
-//   });
-
-//   console.log(res.data);
-// }
-// getPosts();
