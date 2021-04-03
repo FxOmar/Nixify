@@ -30,7 +30,7 @@ function enhanceError(error, config, code, request, response) {
     lineNumber: this.lineNumber,
     columnNumber: this.columnNumber,
     stack: this.stack,
-    // Axios
+    // Request
     config: this.config,
     code: this.code,
   });
