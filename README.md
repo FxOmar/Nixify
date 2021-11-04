@@ -3,7 +3,7 @@
 > Tiny JavaScript HTTP client based on the browser.
 # Description
 ---
-A Tiny JavaScript HTTP client based on the browser with no dependencies, to fetching data from API(s) compatible with old browser(s) and human-friendly library to use. 
+🌴 A Tiny human-friendly JavaScript HTTP client library based on the browser with no dependencies, to fetch data from API(s).
 # Features
 - [ ]  Make [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) from the browser
 - [ ]  Create a prefix - ***`_API/***endpint`
@@ -14,6 +14,7 @@ A Tiny JavaScript HTTP client based on the browser with no dependencies, to fetc
 - [ ]  Methods shortcut `*Http.get()*`
 
 # Installing
+Package manager
 ```bash
 npm install package-name
 ```
