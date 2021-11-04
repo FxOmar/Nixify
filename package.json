@@ -1,19 +1,31 @@
 {
-  "name": "bhr",
+  "name": "BHR",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "source": "src/index.ts",
+  "main": "dist/main.js",
+  "module": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "parcel watch",
+    "build": "parcel build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FxOmar/BHR.git"
   },
-  "author": "",
+  "author": "Omar Chadidi",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/FxOmar/BHR/issues"
   },
-  "homepage": "https://github.com/FxOmar/BHR#readme"
+  "homepage": "https://github.com/FxOmar/BHR#readme",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.3.0",
+    "@typescript-eslint/parser": "^5.3.0",
+    "eslint": "^8.1.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "parcel": "^2.0.0",
+    "prettier": "2.4.1"
+  }
 }

@@ -1,0 +1,1 @@
+{"mappings":";;;;;SAAgB,yCAAO,CAAC,EAAU,EAAU,CAAC;IACzC,MAAM,CAAC,EAAE;AACb,CAAC","sources":["BHR/src/index.ts"],"sourcesContent":["export function example(ex: string): string {\n    return ex\n}\n"],"names":[],"version":3,"file":"main.js.map","sourceRoot":"../../"}
