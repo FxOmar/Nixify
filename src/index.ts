@@ -1,9 +1,14 @@
 interface OptionsInterface {
   method: string;
+  prefixUrl?: Object | string;
 }
 
 interface methodsInterface {
   [name: string]: Function;
+}
+
+interface shortcutOptionsInterface {
+  prefixUrl: string;
 }
 
 export class BHR {
@@ -13,28 +18,45 @@ export class BHR {
     this.__options = __options;
   }
 
-  fetchData(url) {
-    return this.__options.method + " " + url;
+  fetchData(url, options: shortcutOptionsInterface) {
+    const prefixUrl =
+      typeof this.__options.prefixUrl === "object" &&
+      this.__options.prefixUrl !== null
+        ? options.prefixUrl
+          ? this.__options.prefixUrl[options.prefixUrl]
+          : Object.values(this.__options.prefixUrl)[0]
+        : this.__options.prefixUrl ?? options.prefixUrl;
+
+    return `[${this.__options.method}] ${prefixUrl}${url}`;
   }
 }
 
-function instance(): methodsInterface {
+function createNewInstance(config?: Object): methodsInterface {
   const methods: string[] = ["get", "post"];
 
-  const methodsFunction: methodsInterface = {};
+  const instance: methodsInterface = {};
 
   for (let index = 0; index <= methods.length - 1; index++) {
     const method = methods[index];
 
-    methodsFunction[method] = (url: string): Object =>
+    instance[method] = (
+      url: string,
+      options?: shortcutOptionsInterface
+    ): Object =>
       new BHR({
         method: method,
-      }).fetchData(url);
+        ...config,
+      }).fetchData(url, options);
   }
 
-  return methodsFunction;
+  return instance;
 }
 
-const http = instance();
+const http = createNewInstance({
+  prefixUrl: {
+    API: "www.google.com",
+    api_1: "www.airbit.com",
+  },
+});
 
-console.log(http.get("https://www.google.com/"));
+console.log(http.get("/emoji"));
