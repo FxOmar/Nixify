@@ -7,7 +7,8 @@
   "module": "dist/index.js",
   "scripts": {
     "watch": "parcel watch",
-    "build": "parcel build"
+    "build": "parcel build",
+    "test": "jest --watch"
   },
   "repository": {
     "type": "git",
@@ -20,11 +21,17 @@
   },
   "homepage": "https://github.com/FxOmar/BHR#readme",
   "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-typescript": "^7.16.0",
+    "@types/jest": "^27.0.2",
     "@typescript-eslint/eslint-plugin": "^5.3.0",
     "@typescript-eslint/parser": "^5.3.0",
+    "babel-jest": "^27.3.1",
     "eslint": "^8.1.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "jest": "^27.3.1",
     "parcel": "^2.0.0",
     "prettier": "2.4.1"
   }

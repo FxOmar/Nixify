@@ -20,7 +20,7 @@ export function mergeConfiguration(
   return Object.assign(target, config);
 }
 
-export class BHR {
+class BHR {
   protected __options: OptionsInterface;
   protected __methodsConfig: MethodsConfigInterface;
 
@@ -47,7 +47,7 @@ export class BHR {
 
       return new URL(fullURL);
     } catch (error) {
-      throw new Error(`"Invalid URL: ${fullURL}"`);
+      throw new TypeError(`"Invalid URL: ${fullURL}"`);
     }
   }
 
@@ -63,7 +63,7 @@ export class BHR {
   }
 }
 
-function createNewInstance(config?: OptionsInterface): methodsInterface {
+export function createNewInstance(config?: OptionsInterface): methodsInterface {
   const methods: string[] = ["get", "post"];
 
   const instance: methodsInterface = {};
@@ -82,3 +82,5 @@ function createNewInstance(config?: OptionsInterface): methodsInterface {
 
   return instance;
 }
+
+export default createNewInstance();
