@@ -11,13 +11,7 @@ interface MethodsConfigInterface {
   prefixUrl?: string;
   path: string;
   headers: Object;
-}
-
-export function mergeConfiguration(
-  target: MethodsConfigInterface,
-  config: Object
-): MethodsConfigInterface {
-  return Object.assign(target, config);
+  responseType: string;
 }
 
 class BHR {
@@ -32,39 +26,43 @@ class BHR {
     this.__methodsConfig = methodsConfig;
   }
 
+  /**
+   * TODO: This Block of code need to be refactored it may cause us a problem in the future.
+   */
   protected get __parseURL(): URL {
-    let fullURL: string;
     try {
-      fullURL = !this.__options.hasOwnProperty("prefixUrl")
-        ? this.__methodsConfig.path
-        : (typeof this.__options.prefixUrl === "object" &&
-          this.__options.prefixUrl !== null
-            ? this.__methodsConfig.prefixUrl
-              ? this.__options.prefixUrl[this.__methodsConfig.prefixUrl]
-              : Object.values(this.__options.prefixUrl)[0]
-            : this.__options.prefixUrl ?? this.__methodsConfig.prefixUrl) +
-          this.__methodsConfig.path;
-
-      return new URL(fullURL);
+      return new URL(
+        !this.__options.hasOwnProperty("prefixUrl")
+          ? this.__methodsConfig.path
+          : (typeof this.__options.prefixUrl === "object" &&
+            this.__options.prefixUrl !== null
+              ? this.__methodsConfig.prefixUrl
+                ? this.__options.prefixUrl[this.__methodsConfig.prefixUrl]
+                : Object.values(this.__options.prefixUrl)[0]
+              : this.__options.prefixUrl ?? this.__methodsConfig.prefixUrl) +
+            this.__methodsConfig.path
+      );
     } catch (error) {
-      throw new TypeError(`"Invalid URL: ${fullURL}"`);
+      throw new TypeError(error);
     }
   }
 
-  get configuration() {
-    const URL = this.__parseURL;
+  get __configuration(): Request {
+    const headersConfig: any = { ...this.__methodsConfig.headers };
 
-    const configurations = mergeConfiguration(this.__methodsConfig, {
-      path: URL.pathname,
-      prefixUrl: URL.origin,
+    if (this.__methodsConfig.responseType === "json") {
+      Object.assign(headersConfig, { "Content-Type": "application/json" });
+    }
+
+    return new Request(this.__parseURL.href, {
+      method: this.__methodsConfig.method.toLocaleUpperCase(),
+      headers: new Headers(headersConfig),
     });
-
-    return configurations;
   }
 }
 
 export function createNewInstance(config?: OptionsInterface): methodsInterface {
-  const methods: string[] = ["get", "post"];
+  const methods: string[] = ["get", "post", "patch"];
 
   const instance: methodsInterface = {};
 
@@ -76,7 +74,7 @@ export function createNewInstance(config?: OptionsInterface): methodsInterface {
         method: method,
         path,
         ...options,
-      }).configuration;
+      }).__configuration;
     };
   }
 
