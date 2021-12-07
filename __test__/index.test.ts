@@ -1,32 +1,27 @@
-import http, { createNewInstance } from "../src/index";
+require("isomorphic-fetch");
+import http from "../src/index";
+
+jest.mock("../src/index");
+
+async function getData() {
+  return await http.get("https://jsonplaceholder.typicode.com/todos/1", {
+    responseType: "json",
+  });
+}
 
 describe("Create new instance", () => {
-  const result = {
-    method: "patch",
-    path: "/hello",
-    prefixUrl: "https://www.google.com",
-  };
-  it("should create a new instance", () => {
-    const instance = createNewInstance({
-      prefixUrl: "https://www.google.com",
-    });
+  it("should get data", async () => {
+    const todo = {
+      userId: 1,
+      id: 1,
+      title: "delectus aut autem",
+      completed: false,
+    };
 
-    expect(instance.get("/hello")).toEqual(result);
-  });
+    (http.get as jest.Mock).mockResolvedValueOnce({ data: todo });
 
-  it("should create new instance without configurations", () => {
-    expect(http.patch("https://www.google.com/hello")).toEqual(result);
-  });
+    const response = await getData();
 
-  it("should create shortcut method", () => {});
-  it("should take the default prefixUrl", () => {
-    const instance = createNewInstance({
-      prefixUrl: {
-        API: "https://www.google.com",
-        API_1: "https://www.airbit.com",
-      },
-    });
-
-    expect(instance.get("/hello")).toEqual(result);
+    expect(response.data).toEqual(todo);
   });
 });

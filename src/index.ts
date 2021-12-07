@@ -47,17 +47,38 @@ class BHR {
     }
   }
 
-  get __configuration(): Request {
+  protected get __configuration(): Request {
     const headersConfig: any = { ...this.__methodsConfig.headers };
-
-    if (this.__methodsConfig.responseType === "json") {
-      Object.assign(headersConfig, { "Content-Type": "application/json" });
-    }
 
     return new Request(this.__parseURL.href, {
       method: this.__methodsConfig.method.toLocaleUpperCase(),
       headers: new Headers(headersConfig),
     });
+  }
+
+  HttpRequest() {
+    const response = new Response();
+
+    if (this.__methodsConfig.responseType in response) {
+      return fetch(this.__configuration).then(async (res) => {
+        const retrieveHeaders = (headers: Object = {}): Object => {
+          for (let pair of res.headers.entries()) {
+            headers[pair[0]] = pair[1];
+          }
+
+          return headers;
+        };
+
+        return {
+          data: await res.json(),
+          headers: retrieveHeaders(),
+          status: res.status,
+          statusText: res.statusText,
+          config: { ...this.__options, ...this.__methodsConfig },
+        };
+      });
+    }
+    throw new Error("Response type not supported");
   }
 }
 
@@ -74,11 +95,13 @@ export function createNewInstance(config?: OptionsInterface): methodsInterface {
         method: method,
         path,
         ...options,
-      }).__configuration;
+      }).HttpRequest();
     };
   }
 
   return instance;
 }
 
-export default createNewInstance();
+const http = createNewInstance();
+
+export default http;
