@@ -1,15 +1,4 @@
-function $parcel$defineInteropFlag(a) {
-  Object.defineProperty(a, '__esModule', {value: true, configurable: true});
-}
-function $parcel$export(e, n, v, s) {
-  Object.defineProperty(e, n, {get: v, set: s, enumerable: true, configurable: true});
-}
-
-$parcel$defineInteropFlag(module.exports);
-
-$parcel$export(module.exports, "createNewInstance", () => $5e2f01247a5d6f10$export$aa221cf8b095b4a8);
-$parcel$export(module.exports, "default", () => $5e2f01247a5d6f10$export$2e2bcd8739ae039);
-class $5e2f01247a5d6f10$var$BHR {
+class $a8e101027d325e52$var$BHR {
     constructor(__options = {
     }, __methodsConfig){
         this.__options = __options;
@@ -70,7 +59,7 @@ class $5e2f01247a5d6f10$var$BHR {
         throw new Error("Response type not supported");
     }
 }
-function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
+function $a8e101027d325e52$export$aa221cf8b095b4a8(config) {
     const methods = [
         "get",
         "head",
@@ -87,7 +76,7 @@ function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
    */ for(let index = 0; index <= methods.length - 1; index++){
         const method = methods[index];
         instance[method] = (path, options)=>{
-            return new $5e2f01247a5d6f10$var$BHR(config, {
+            return new $a8e101027d325e52$var$BHR(config, {
                 method: method,
                 path: path,
                 ...options
@@ -96,8 +85,9 @@ function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
     }
     return instance;
 }
-const $5e2f01247a5d6f10$var$http = $5e2f01247a5d6f10$export$aa221cf8b095b4a8();
-var $5e2f01247a5d6f10$export$2e2bcd8739ae039 = $5e2f01247a5d6f10$var$http;
+const $a8e101027d325e52$var$http = $a8e101027d325e52$export$aa221cf8b095b4a8();
+var $a8e101027d325e52$export$2e2bcd8739ae039 = $a8e101027d325e52$var$http;
 
 
-//# sourceMappingURL=main.js.map
+export {$a8e101027d325e52$export$aa221cf8b095b4a8 as createNewInstance, $a8e101027d325e52$export$2e2bcd8739ae039 as default};
+//# sourceMappingURL=bhr.mjs.map

@@ -11,7 +11,7 @@
 - [ ] Make [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) from the browser - in progress
 - [x] Create a prefix - **_`\_API/_**endpint`
 - [ ] Cancel requests
-- [ ] Automatic transforms for JSON data
+- [X] Automatic transforms for JSON data
 - [ ] Simpler API - in progress
 - [ ] Lifecycle hooks for the request
 - [x] Methods shortcut `*Http.get()*`

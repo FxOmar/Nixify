@@ -1,15 +1,6 @@
-function $parcel$defineInteropFlag(a) {
-  Object.defineProperty(a, '__esModule', {value: true, configurable: true});
-}
-function $parcel$export(e, n, v, s) {
-  Object.defineProperty(e, n, {get: v, set: s, enumerable: true, configurable: true});
-}
-
-$parcel$defineInteropFlag(module.exports);
-
-$parcel$export(module.exports, "createNewInstance", () => $5e2f01247a5d6f10$export$aa221cf8b095b4a8);
-$parcel$export(module.exports, "default", () => $5e2f01247a5d6f10$export$2e2bcd8739ae039);
-class $5e2f01247a5d6f10$var$BHR {
+/**
+ *
+ */ class $a8e101027d325e52$var$BHR {
     constructor(__options = {
     }, __methodsConfig){
         this.__options = __options;
@@ -19,9 +10,7 @@ class $5e2f01247a5d6f10$var$BHR {
     }
     /**
    * TODO: This Block of code need to be refactored it may cause us a problem in the future.
-   *
-   * Parse the given URI
-   */ get __parseURI() {
+   */ get __parseURL() {
         try {
             return new URL(!Object.hasOwnProperty.call(this.__options, "PREFIX_URL") ? this.__methodsConfig.path : (typeof this.__options.PREFIX_URL === "object" && this.__options.PREFIX_URL !== null ? this.__methodsConfig.PREFIX_URL ? this.__options.PREFIX_URL[this.__methodsConfig.PREFIX_URL] : Object.values(this.__options.PREFIX_URL)[0] : this.__options.PREFIX_URL ?? this.__methodsConfig.PREFIX_URL) + this.__methodsConfig.path);
         } catch (error) {
@@ -29,7 +18,7 @@ class $5e2f01247a5d6f10$var$BHR {
         }
     }
     get __configuration() {
-        return new Request(this.__parseURI.href, {
+        return new Request(this.__parseURL.href, {
             method: this.__methodsConfig.method.toLocaleUpperCase(),
             headers: new Headers(this.__methodsConfig.headers),
             /*
@@ -39,25 +28,15 @@ class $5e2f01247a5d6f10$var$BHR {
        */ body: Object.hasOwnProperty.call(this.__methodsConfig, "json") ? JSON.stringify(this.__methodsConfig.json) : this.__methodsConfig.body
         });
     }
-    /**
-   * HttpAdapter for making http requests 🦅 to the given API'S.
-   *
-   * @returns {Promise<ResponseInterface>}
-   */ httpAdapter() {
+    HttpRequest() {
         const response1 = new Response();
         this.__methodsConfig.responseType === undefined && (this.__methodsConfig.responseType = "json");
         if (this.__methodsConfig.responseType in response1) return fetch(this.__configuration).then(async (res)=>{
-            /**
-         * Retrieve response Header.
-         *
-         * @param headers
-         * @returns Response Headers
-         */ const retrieveHeaders = (headers = {
+            const retrieveHeaders = (headers = {
             })=>{
                 for (const pair of res.headers.entries())headers[pair[0]] = pair[1];
                 return headers;
             };
-            // Response Schema
             const response = {
                 data: await res.json(),
                 headers: retrieveHeaders(),
@@ -70,7 +49,7 @@ class $5e2f01247a5d6f10$var$BHR {
         throw new Error("Response type not supported");
     }
 }
-function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
+function $a8e101027d325e52$export$aa221cf8b095b4a8(config) {
     const methods = [
         "get",
         "head",
@@ -79,7 +58,7 @@ function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
         "post",
         "patch",
         "options", 
-    ]; // All the HTTP request methods.
+    ]; // All the possible methods needed
     const instance = {
     };
     /**
@@ -87,17 +66,18 @@ function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
    */ for(let index = 0; index <= methods.length - 1; index++){
         const method = methods[index];
         instance[method] = (path, options)=>{
-            return new $5e2f01247a5d6f10$var$BHR(config, {
+            return new $a8e101027d325e52$var$BHR(config, {
                 method: method,
                 path: path,
                 ...options
-            }).httpAdapter();
+            }).HttpRequest();
         };
     }
     return instance;
 }
-const $5e2f01247a5d6f10$var$http = $5e2f01247a5d6f10$export$aa221cf8b095b4a8();
-var $5e2f01247a5d6f10$export$2e2bcd8739ae039 = $5e2f01247a5d6f10$var$http;
+const $a8e101027d325e52$var$http = $a8e101027d325e52$export$aa221cf8b095b4a8();
+var $a8e101027d325e52$export$2e2bcd8739ae039 = $a8e101027d325e52$var$http;
 
 
-//# sourceMappingURL=main.js.map
+export {$a8e101027d325e52$export$aa221cf8b095b4a8 as createNewInstance, $a8e101027d325e52$export$2e2bcd8739ae039 as default};
+//# sourceMappingURL=module.mjs.map
