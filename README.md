@@ -8,7 +8,7 @@
 
 # Features
 
-- [ ] Make [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) from the browser - in progress
+- [x] Make [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) from the browser
 - [x] Create a prefix - **_`\_API/_**endpint`
 - [ ] Cancel requests
 - [X] Automatic transforms for JSON data
