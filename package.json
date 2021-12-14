@@ -1,6 +1,6 @@
 {
-  "name": "BHR",
-  "version": "1.0.0",
+  "name": "bhr-maker",
+  "version": "1.0.1-beta",
   "description": "",
   "source": "src/index.ts",
   "main": "dist/main.js",

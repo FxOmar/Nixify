@@ -80,8 +80,7 @@ function $a8e101027d325e52$export$aa221cf8b095b4a8(config) {
         "patch",
         "options", 
     ]; // All the HTTP request methods.
-    const instance = {
-    };
+    let instance;
     /**
    * Build methods shortcut *Http.get()*.
    */ for(let index = 0; index <= methods.length - 1; index++){

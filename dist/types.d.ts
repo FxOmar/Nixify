@@ -10,8 +10,15 @@ interface ResponseInterface {
     statusText: string;
     config: Request;
 }
+type methodsType = (path: string, options?: MethodConfigInterface) => Promise<ResponseInterface>;
 interface methodsInterface {
-    [name: string]: (path: string, options?: MethodConfigInterface) => Promise<ResponseInterface>;
+    get: methodsType;
+    head: methodsType;
+    put: methodsType;
+    delete: methodsType;
+    post: methodsType;
+    patch: methodsType;
+    options: methodsType;
 }
 interface MethodConfigInterface {
     PREFIX_URL?: string;

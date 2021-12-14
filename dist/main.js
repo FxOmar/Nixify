@@ -91,8 +91,7 @@ function $5e2f01247a5d6f10$export$aa221cf8b095b4a8(config) {
         "patch",
         "options", 
     ]; // All the HTTP request methods.
-    const instance = {
-    };
+    let instance;
     /**
    * Build methods shortcut *Http.get()*.
    */ for(let index = 0; index <= methods.length - 1; index++){
