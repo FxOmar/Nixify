@@ -12,19 +12,19 @@ interface ResponseInterface {
   config: Request;
 }
 
-type methodsType = (
+type MethodsType = (
   path: string,
   options?: MethodConfigInterface
 ) => Promise<ResponseInterface>;
 
-interface methodsInterface {
-  get: methodsType;
-  head: methodsType;
-  put: methodsType;
-  delete: methodsType;
-  post: methodsType;
-  patch: methodsType;
-  options: methodsType;
+interface MethodsInterface {
+  get: MethodsType;
+  head: MethodsType;
+  put: MethodsType;
+  delete: MethodsType;
+  post: MethodsType;
+  patch: MethodsType;
+  options: MethodsType;
 }
 
 interface MethodConfigInterface {
@@ -149,37 +149,25 @@ class BHR {
  *
  * @param {OptionsInterface} config - PREFIX_URL { API: string: URI: string}
  *
- * @returns {methodsInterface} - new instance of BHR
+ * @returns {MethodsInterface} - new instance of BHR
  */
-export function createNewInstance(config?: OptionsInterface): methodsInterface {
-  const methods: string[] = [
-    "get",
-    "head",
-    "put",
-    "delete",
-    "post",
-    "patch",
-    "options",
-  ]; // All the HTTP request methods.
-
-  let instance: methodsInterface;
+export function createNewInstance(config?: OptionsInterface): MethodsInterface {
+  const methods = ["get", "head", "put", "delete", "post", "patch", "options"]; // All the HTTP request methods.
 
   /**
    * Build methods shortcut *Http.get()*.
    */
-  for (let index = 0; index <= methods.length - 1; index++) {
-    const method = methods[index];
-
-    instance[method] = (path: string, options?: MethodConfigInterface) => {
+  const methodsBuilder = methods.map((Method) => ({
+    [Method]: (path: string, options?: MethodConfigInterface) => {
       return new BHR(config, {
-        method: method,
+        method: Method,
         path,
         ...options,
       }).httpAdapter();
-    };
-  }
+    },
+  }));
 
-  return instance;
+  return Object.assign({}, ...methodsBuilder);
 }
 
 const http = createNewInstance();
