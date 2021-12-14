@@ -29,9 +29,17 @@ class $5e2f01247a5d6f10$var$BHR {
         }
     }
     get __configuration() {
+        const headersConfig = new Headers(this.__methodsConfig.headers);
+        /**
+     * if body is json, then set headers to content-type JSON
+     */ if ([
+            "post",
+            "put",
+            "patch"
+        ].includes(this.__methodsConfig.method) && Object.hasOwnProperty.call(this.__methodsConfig, "json") && !Object.hasOwnProperty.call(this.__methodsConfig, "headers['Content-Type']")) headersConfig.append("Content-Type", "application/json; charset=UTF-8");
         return new Request(this.__parseURI.href, {
             method: this.__methodsConfig.method.toLocaleUpperCase(),
-            headers: new Headers(this.__methodsConfig.headers),
+            headers: headersConfig,
             /*
        * Note: The body type can only be a Blob, BufferSource, FormData, URLSearchParams,
        * USVString or ReadableStream type,
@@ -46,27 +54,30 @@ class $5e2f01247a5d6f10$var$BHR {
    */ httpAdapter() {
         const response1 = new Response();
         this.__methodsConfig.responseType === undefined && (this.__methodsConfig.responseType = "json");
-        if (this.__methodsConfig.responseType in response1) return fetch(this.__configuration).then(async (res)=>{
-            /**
+        if (this.__methodsConfig.responseType in response1) {
+            const requestConfig = this.__configuration;
+            return fetch(requestConfig).then(async (res)=>{
+                /**
          * Retrieve response Header.
          *
          * @param headers
          * @returns Response Headers
          */ const retrieveHeaders = (headers = {
-            })=>{
-                for (const pair of res.headers.entries())headers[pair[0]] = pair[1];
-                return headers;
-            };
-            // Response Schema
-            const response = {
-                data: await res.json(),
-                headers: retrieveHeaders(),
-                status: res.status,
-                statusText: res.statusText,
-                config: this.__configuration
-            };
-            return response;
-        });
+                })=>{
+                    for (const pair of res.headers.entries())headers[pair[0]] = pair[1];
+                    return headers;
+                };
+                // Response Schema
+                const response = {
+                    data: await res.json(),
+                    headers: retrieveHeaders(),
+                    status: res.status,
+                    statusText: res.statusText,
+                    config: requestConfig
+                };
+                return response;
+            });
+        }
         throw new Error("Response type not supported");
     }
 }

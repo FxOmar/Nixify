@@ -59,9 +59,25 @@ class BHR {
   }
 
   protected get __configuration(): Request {
+    const headersConfig = new Headers(this.__methodsConfig.headers);
+
+    /**
+     * if body is json, then set headers to content-type JSON
+     */
+    if (
+      ["post", "put", "patch"].includes(this.__methodsConfig.method) &&
+      Object.hasOwnProperty.call(this.__methodsConfig, "json") &&
+      !Object.hasOwnProperty.call(
+        this.__methodsConfig,
+        "headers['Content-Type']"
+      )
+    ) {
+      headersConfig.append("Content-Type", "application/json; charset=UTF-8");
+    }
+
     return new Request(this.__parseURI.href, {
       method: this.__methodsConfig.method.toLocaleUpperCase(),
-      headers: new Headers(this.__methodsConfig.headers),
+      headers: headersConfig,
       /*
        * Note: The body type can only be a Blob, BufferSource, FormData, URLSearchParams,
        * USVString or ReadableStream type,
@@ -86,7 +102,9 @@ class BHR {
       : null;
 
     if (this.__methodsConfig.responseType in response) {
-      return fetch(this.__configuration).then(async (res) => {
+      const requestConfig = this.__configuration;
+
+      return fetch(requestConfig).then(async (res) => {
         /**
          * Retrieve response Header.
          *
@@ -107,7 +125,7 @@ class BHR {
           headers: retrieveHeaders(),
           status: res.status,
           statusText: res.statusText,
-          config: this.__configuration,
+          config: requestConfig,
         };
 
         return response;
