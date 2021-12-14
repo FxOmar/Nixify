@@ -21,13 +21,7 @@
 Package manager
 
 ```bash
-npm install bhr-maker
-```
-
-Using UNPKG CDN:
-
-```html
-<script src="https://unpkg.com/package-name/dist/package-name.min.js"></script>
+npm install bhr-maker@1.0.1-beta.0
 ```
 
 # Example
