@@ -44,18 +44,18 @@ Creating new instance of BHR to avoid rewriting url over and over again.
 import { createNewInstance } from "bhr-maker";
 
 const http = createNewInstance(
-    PREFIX_URL: {
-          API: "https://jsonplaceholder.typicode.com", // this one is the default API
-          API_2: "https://fakestoreapi.com"
-    },
+  PREFIX_URL: {
+    API: "https://jsonplaceholder.typicode.com", // this one is the default API
+    API_2: "https://fakestoreapi.com"
+  },
 );
 
 /*
  * if you have multiple prefixUrl you can specify which one you want by passing
- * await http.get("/products/1", {  PREFIX_URL: "API_2" });
+ * ``PREFIX_URL: NAME`` to the config
 */
 async function getData() {
-  const res = await http.get("/posts/1");
+  const res = await http.get("/posts/1" , { PREFIX_URL: "API" });
 
   console.log(res.data);
 }
@@ -123,9 +123,9 @@ async function addNewPost() {
 
 # API
 
-### Request method aliases
+#### Request method aliases
 
-For convenience aliases have been provided for all supported request methods.
+We provided supported for all request methods.
 
 ##### http.get(url[, config])
 
@@ -135,8 +135,97 @@ For convenience aliases have been provided for all supported request methods.
 
 ##### http.options(url[, config])
 
-##### http.post(url[, body || json, config]])
+##### http.post(url[, body or json, config])
 
-##### http.put(url[, body || json, config]])
+##### http.put(url[, body or json, config])
 
-##### http.patch(url[, body || json, config]])
+##### http.patch(url[, body or json, config])
+
+### Creating an instance
+
+You can create a new instance of `BHR` with a custom config.
+` http.createNewInstance([config])`
+
+```javascript
+const instance = createNewInstance(
+  PREFIX_URL: "https://jsonplaceholder.typicode.com" // or
+  // You can pass an object of PREFIX_URL
+  PREFIX_URL: {
+    API: "https://jsonplaceholder.typicode.com", // this one is the default API
+    API_2: "https://fakestoreapi.com"
+  },
+);
+```
+
+### Request Config
+
+These are the available config options for making requests. Only the url is required.
+
+```javascript
+{
+  // To specify which api you wanna use from the instance
+  PREFIX_URL: "NAME", // default is the first on in the instance PREFIX_URL object
+
+  // `headers` are custom headers to be sent
+  headers: {
+    "Content-Type": "multipart/form-data; boundary=something"
+  },
+
+  // `json` to send body as Content-Type JSON
+  json: {
+    "id":1,
+    "title":"Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
+    "price":109.95
+  },
+
+  /*
+  * `body` to send data under one of these types Blob, BufferSource, FormData URLSearchParams,
+  * USVString or ReadableStream
+  */
+  body: FormData,
+
+  // `responseType` indicates the type of data that the server will respond with
+  // options are: 'arraybuffer', 'document', 'json', 'text', 'stream', 'blob'
+  responseType: 'json', // default
+},
+
+// TODO: add ability to auth to your http request if it required
+
+// `auth` indicates that HTTP Basic auth should be used, and supplies credentials.
+// This will set an `Authorization` header, overwriting any existing
+// `Authorization` custom headers you have set using `headers`.
+// Please note that only HTTP Basic auth is configurable through this parameter.
+// For Bearer tokens and such, use `Authorization` custom headers instead.
+auth: {
+  username: 'janedoe',
+  password: 's00pers3cret'
+},
+
+// To cancel Http requests using AbortController
+signal: new AbortController().signal,
+```
+
+### Response Schema
+
+The response for a request contains the following information.
+
+```javascript
+{
+  // `config` is the config that was provided to the request
+  config: {},
+
+  // `data` is the response that was provided by the server
+  data: {},
+
+  // `status` is the HTTP status code from the server response
+  status: 200,
+
+  // `statusText` is the HTTP status message from the server response
+  statusText: 'OK',
+
+  // `headers` the HTTP headers that the server responded with
+  // All header names are lower cased and can be accessed using the bracket notation.
+  // Example: `response.headers['content-type']`
+  headers: {},
+}
+```
