@@ -21,11 +21,7 @@
 Package manager
 
 ```bash
-npm install package-name
-```
-
-```bash
-yarn add package-name
+npm install bhr-maker
 ```
 
 Using UNPKG CDN:
@@ -39,13 +35,13 @@ Using UNPKG CDN:
 To import BHR you have to use ECMAScript
 
 ```javascript
-import http from "bhr";
+import http from "bhr-maker";
 ```
 
 Creating new instance of BHR to avoid rewriting url over and over again.
 
 ```javascript
-import { createNewInstance } from "bhr";
+import { createNewInstance } from "bhr-maker";
 
 const http = createNewInstance(
     PREFIX_URL: {
