@@ -10,32 +10,33 @@ interface ResponseInterface {
     statusText: string;
     config: Request;
 }
-type methodsType = (path: string, options?: MethodConfigInterface) => Promise<ResponseInterface>;
-interface methodsInterface {
-    get: methodsType;
-    head: methodsType;
-    put: methodsType;
-    delete: methodsType;
-    post: methodsType;
-    patch: methodsType;
-    options: methodsType;
+type MethodsType = (path: string, options?: MethodConfigInterface) => Promise<ResponseInterface>;
+interface MethodsInterface {
+    get: MethodsType;
+    head: MethodsType;
+    put: MethodsType;
+    delete: MethodsType;
+    post: MethodsType;
+    patch: MethodsType;
+    options: MethodsType;
 }
 interface MethodConfigInterface {
     PREFIX_URL?: string;
-    body?: FormData | URLSearchParams;
+    body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
     json?: JSON;
     headers?: Headers;
     responseType?: string;
+    signal: AbortSignal;
 }
 /**
  * Create new instance for the given configuration.
  *
  * @param {OptionsInterface} config - PREFIX_URL { API: string: URI: string}
  *
- * @returns {methodsInterface} - new instance of BHR
+ * @returns {MethodsInterface} - new instance of BHR
  */
-export function createNewInstance(config?: OptionsInterface): methodsInterface;
-declare const http: methodsInterface;
+export function createNewInstance(config?: OptionsInterface): MethodsInterface;
+declare const http: MethodsInterface;
 export default http;
 
 //# sourceMappingURL=types.d.ts.map

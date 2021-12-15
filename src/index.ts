@@ -29,10 +29,11 @@ interface MethodsInterface {
 
 interface MethodConfigInterface {
   PREFIX_URL?: string;
-  body?: FormData | URLSearchParams;
+  body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
   json?: JSON;
   headers?: Headers;
   responseType?: string;
+  signal: AbortSignal;
 }
 
 class BHR {
@@ -95,6 +96,9 @@ class BHR {
       body: Object.hasOwnProperty.call(this.__methodsConfig, "json")
         ? JSON.stringify(this.__methodsConfig.json)
         : this.__methodsConfig.body, // body data type must match "Content-Type" header
+
+      // Cancel request
+      signal: this.__methodsConfig.signal,
     });
   }
 

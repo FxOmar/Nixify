@@ -44,7 +44,9 @@ class $5e2f01247a5d6f10$var$BHR {
        * Note: The body type can only be a Blob, BufferSource, FormData, URLSearchParams,
        * USVString or ReadableStream type,
        * so for adding a JSON object to the payload you need to stringify that object.
-       */ body: Object.hasOwnProperty.call(this.__methodsConfig, "json") ? JSON.stringify(this.__methodsConfig.json) : this.__methodsConfig.body
+       */ body: Object.hasOwnProperty.call(this.__methodsConfig, "json") ? JSON.stringify(this.__methodsConfig.json) : this.__methodsConfig.body,
+            // Cancel request
+            signal: this.__methodsConfig.signal
         });
     }
     /**
