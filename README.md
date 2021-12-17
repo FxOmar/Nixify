@@ -12,7 +12,7 @@
 - [x] Create a prefix - **_`\_API/_**endpint`
 - [x] Cancel requests
 - [x] Automatic transforms for JSON data
-- [ ] Simpler API - in progress
+- [x] Simpler API
 - [ ] Lifecycle hooks for the request
 - [x] Methods shortcut `*Http.get()*`
 
@@ -21,7 +21,7 @@
 Package manager
 
 ```bash
-npm install bhr-maker@1.0.1-beta.0
+npm install bhr-maker
 ```
 
 # Example
