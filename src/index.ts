@@ -3,8 +3,8 @@ interface OptionsInterface {
   PREFIX_URL?: { [name: string]: string } | string;
 }
 
-interface ResponseInterface {
-  data: Record<string, unknown>;
+interface ResponseInterface<T> {
+  data: T;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   headers: any;
   status: number;
@@ -12,10 +12,10 @@ interface ResponseInterface {
   config: Request;
 }
 
-type MethodsType = (
+type MethodsType = <U>(
   path: string,
   options?: MethodConfigInterface
-) => Promise<ResponseInterface>;
+) => Promise<ResponseInterface<U>>;
 
 interface MethodsInterface {
   get: MethodsType;
@@ -107,7 +107,7 @@ class BHR {
    *
    * @returns {Promise<ResponseInterface>}
    */
-  httpAdapter() {
+  httpAdapter<R>() {
     const response = new Response();
 
     this.__methodsConfig.responseType === undefined
@@ -133,7 +133,7 @@ class BHR {
         };
 
         // Response Schema
-        const response: ResponseInterface = {
+        const response: ResponseInterface<R> = {
           data: await res.json(),
           headers: retrieveHeaders(),
           status: res.status,
