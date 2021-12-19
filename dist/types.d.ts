@@ -3,14 +3,14 @@ interface OptionsInterface {
         [name: string]: string;
     } | string;
 }
-interface ResponseInterface {
-    data: Record<string, unknown>;
+interface ResponseInterface<T> {
+    data: T;
     headers: any;
     status: number;
     statusText: string;
     config: Request;
 }
-type MethodsType = (path: string, options?: MethodConfigInterface) => Promise<ResponseInterface>;
+type MethodsType = <U>(path: string, options?: MethodConfigInterface) => Promise<ResponseInterface<U>>;
 interface MethodsInterface {
     get: MethodsType;
     head: MethodsType;
