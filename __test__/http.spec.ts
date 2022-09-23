@@ -56,9 +56,20 @@ describe("HTTP functionalities", () => {
   });
 
   it("Should fetch without creating new instance.", async () => {
-    const { data, status } = await Reqeza.get(`${BASE_URL}/text`).text();
+    const { data, status } = await Reqeza.get<string>(
+      `${BASE_URL}/text`
+    ).text();
 
     expect(status).toBe(200);
     expect(data).toBe("Hello, world");
+  });
+
+  it("Should fetch data with the given interface.", async () => {
+    const { data, status } = await Reqeza.get<{ message: string }>(
+      `${BASE_URL}/book`
+    );
+
+    expect(status).toBe(200);
+    expect(data.message).toBe("Hello, world");
   });
 });

@@ -1,56 +1,12 @@
-import { ValidationError, ResponseError } from "./utils/errors";
-
-// TODO: Move all interfaces to a separate file.
-interface OptionsInterface {
-  PREFIX_URL?: { [name: string]: string } | string;
-}
-
-interface ResponseInterface<T> {
-  data: T;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  headers: unknown;
-  status: number;
-  statusText: string;
-  config: Request;
-}
-
-type SetTypeMethod = () => unknown;
-
-interface SetTypesInterface<U> {
-  json: SetTypeMethod;
-  text: SetTypeMethod;
-  blob: SetTypeMethod;
-  arrayBuffer: SetTypeMethod;
-  formData: SetTypeMethod;
-
-  then(callback: unknown): Promise<ResponseInterface<U>>;
-}
-
-type MethodsType = <U>(
-  path: string,
-  options?: MethodConfigInterface
-) => Promise<ResponseInterface<U>>;
-
-interface MethodsInterface {
-  get: MethodsType;
-  head: MethodsType;
-  put: MethodsType;
-  delete: MethodsType;
-  post: MethodsType;
-  patch: MethodsType;
-  options: MethodsType;
-}
-
-interface MethodConfigInterface {
-  PREFIX_URL?: string;
-  path: string;
-  method: string;
-  body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
-  json?: JSON;
-  headers?: Headers;
-  responseType?: string;
-  signal?: AbortSignal;
-}
+import {
+  CreateNewInstance,
+  MethodConfig,
+  Options,
+  RequestMethods,
+  RequestMethodsType,
+  ResponseInterface,
+} from "./interfaces";
+import { ValidationError, ResponseError } from "./utils";
 
 // All the HTTP request methods.
 const METHODS = ["get", "head", "put", "delete", "post", "patch", "options"];
@@ -59,8 +15,8 @@ const TYPES_METHODS = ["json", "text", "blob", "arrayBuffer", "formData"];
 
 class Http {
   constructor(
-    protected __options: OptionsInterface = {},
-    protected __methodsConfig: MethodConfigInterface
+    protected __options: Options = {},
+    protected __methodsConfig: MethodConfig
   ) {
     this.__options = __options;
     this.__methodsConfig = __methodsConfig;
@@ -164,13 +120,13 @@ class Http {
   }
 }
 
-const Reqeza = {
+const Reqeza: CreateNewInstance = {
   /**
    * Create new instance for the given configuration.
    *
-   * @param {OptionsInterface} config - PREFIX_URL { API: string: URI: string}
+   * @param {Options} config - PREFIX_URL { API: string: URI: string}
    *
-   * @returns {MethodsInterface} - new instance of Http
+   * @returns {Methods} - new instance of Http
    *
    * @example
    * const http = Reqeza.create({
@@ -179,13 +135,16 @@ const Reqeza = {
    *  }
    * })
    */
-  create(config?: OptionsInterface) {
+  create(config?: Options): RequestMethods {
     /**
      * Build methods shortcut *Http.get().text()*.
      */
     const methodsBuilder = METHODS.map((method) => {
       return {
-        [method]: (path: string, options?: MethodConfigInterface) => {
+        [method]: (
+          path: string,
+          options?: MethodConfig
+        ): RequestMethodsType => {
           let responseType = "json";
 
           // Response types methods generator.
