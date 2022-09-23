@@ -1,45 +1,22 @@
-// TODO: Move all interfaces to a separate file.
-interface OptionsInterface {
-  PREFIX_URL?: { [name: string]: string } | string;
-}
+import {
+  CreateNewInstance,
+  MethodConfig,
+  Options,
+  RequestMethods,
+  RequestMethodsType,
+  ResponseInterface,
+} from "./interfaces";
+import { ValidationError, ResponseError } from "./utils";
 
-interface ResponseInterface<T> {
-  data: T;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  headers: any;
-  status: number;
-  statusText: string;
-  config: Request;
-}
+// All the HTTP request methods.
+const METHODS = ["get", "head", "put", "delete", "post", "patch", "options"];
+// Response types
+const TYPES_METHODS = ["json", "text", "blob", "arrayBuffer", "formData"];
 
-type MethodsType = <U>(
-  path: string,
-  options?: MethodConfigInterface
-) => Promise<ResponseInterface<U>>;
-
-interface MethodsInterface {
-  get: MethodsType;
-  head: MethodsType;
-  put: MethodsType;
-  delete: MethodsType;
-  post: MethodsType;
-  patch: MethodsType;
-  options: MethodsType;
-}
-
-interface MethodConfigInterface {
-  PREFIX_URL?: string;
-  body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
-  json?: JSON;
-  headers?: Headers;
-  responseType?: string;
-  signal: AbortSignal;
-}
-
-class BHR {
+class Http {
   constructor(
-    protected __options: OptionsInterface = {},
-    protected __methodsConfig
+    protected __options: Options = {},
+    protected __methodsConfig: MethodConfig
   ) {
     this.__options = __options;
     this.__methodsConfig = __methodsConfig;
@@ -64,7 +41,7 @@ class BHR {
             this.__methodsConfig.path
       );
     } catch (error) {
-      throw new TypeError(error);
+      throw new ValidationError("The given URI is invalid.");
     }
   }
 
@@ -101,30 +78,25 @@ class BHR {
       signal: this.__methodsConfig.signal,
     });
   }
-
   /**
    * HttpAdapter for making http requests 🦅 to the given API'S.
    *
    * @returns {Promise<ResponseInterface>}
    */
   httpAdapter<R>() {
-    const response = new Response();
+    const requestConfig = this.__configuration;
 
-    this.__methodsConfig.responseType === undefined
-      ? (this.__methodsConfig.responseType = "json")
-      : null;
-
-    if (this.__methodsConfig.responseType in response) {
-      const requestConfig = this.__configuration;
-
-      return fetch(requestConfig).then(async (res) => {
+    return fetch(requestConfig)
+      .then(ResponseError)
+      .then(async (res) => {
         /**
          * Retrieve response Header.
          *
          * @param headers
          * @returns Response Headers
          */
-        const retrieveHeaders = (headers: Record<string, unknown> = {}) => {
+        const retrieveHeaders = () => {
+          const headers = {};
           for (const pair of res.headers.entries()) {
             headers[pair[0]] = pair[1];
           }
@@ -132,9 +104,11 @@ class BHR {
           return headers;
         };
 
+        const parseResponse = () => res[this.__methodsConfig.responseType]();
+
         // Response Schema
         const response: ResponseInterface<R> = {
-          data: await res.json(),
+          data: await parseResponse(),
           headers: retrieveHeaders(),
           status: res.status,
           statusText: res.statusText,
@@ -143,37 +117,68 @@ class BHR {
 
         return response;
       });
-    }
-    throw new Error("Response type not supported");
   }
 }
 
-/**
- * Create new instance for the given configuration.
- *
- * @param {OptionsInterface} config - PREFIX_URL { API: string: URI: string}
- *
- * @returns {MethodsInterface} - new instance of BHR
- */
-export function createNewInstance(config?: OptionsInterface): MethodsInterface {
-  const methods = ["get", "head", "put", "delete", "post", "patch", "options"]; // All the HTTP request methods.
-
+const Reqeza: CreateNewInstance = {
   /**
-   * Build methods shortcut *Http.get()*.
+   * Create new instance for the given configuration.
+   *
+   * @param {Options} config - PREFIX_URL { API: string: URI: string}
+   *
+   * @returns {Methods} - new instance of Http
+   *
+   * @example
+   * const http = Reqeza.create({
+   *  PREFIX_URL: {
+   *    API: "https://api.github.com"
+   *  }
+   * })
    */
-  const methodsBuilder = methods.map((Method) => ({
-    [Method]: (path: string, options?: MethodConfigInterface) => {
-      return new BHR(config, {
-        method: Method,
-        path,
-        ...options,
-      }).httpAdapter();
-    },
-  }));
+  create(config?: Options): RequestMethods {
+    /**
+     * Build methods shortcut *Http.get().text()*.
+     */
+    const methodsBuilder = METHODS.map((method) => {
+      return {
+        [method]: (
+          path: string,
+          options?: MethodConfig
+        ): RequestMethodsType => {
+          let responseType = "json";
 
-  return Object.assign({}, ...methodsBuilder);
-}
+          // Response types methods generator.
+          const setType = {
+            ...Object.assign(
+              {},
+              ...TYPES_METHODS.map((typeName) => ({
+                [typeName]: () => {
+                  responseType = typeName;
 
-const http = createNewInstance();
+                  return setType;
+                },
+              }))
+            ),
+            then(callback) {
+              return new Http(config, {
+                path,
+                method,
+                responseType,
+                ...options,
+              })
+                .httpAdapter()
+                .then(callback);
+            },
+          };
 
-export default http;
+          return setType;
+        },
+      };
+    });
+
+    return Object.assign({}, ...methodsBuilder);
+  },
+};
+
+// Merge request methods with Reqeza Object.
+export default Object.assign(Reqeza, Reqeza.create());

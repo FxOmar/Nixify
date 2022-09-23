@@ -1,87 +1,100 @@
-# BHR
+# Reqeza `beta_version`
 
-> Tiny JavaScript HTTP client based on the browser.
+> Tiny JavaScript HTTP client based on browser [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
 # Description
 
-🌴 A Tiny human-friendly JavaScript HTTP client library based on the browser with no dependencies, to fetch data from API(s).
+🌴 A tiny human-friendly JavaScript HTTP client library based on the browser with no dependencies.
 
 # Features
 
-- [x] Make [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) from the browser
-- [x] Create a prefix - **_`\_API/_**endpint`
-- [x] Cancel requests
+- [x] Written in TypeScript, First-class TypeScript support
+- [x] URL prefix option
+- [x] Methods shortcut `*Http.get().text()*`
 - [x] Automatic transforms for JSON data
 - [x] Simpler API
-- [ ] Lifecycle hooks for the request
-- [x] Methods shortcut `*Http.get()*`
+- [x] Cancel requests
+- [ ] Hooks
 
 # Installing
+
+##### 1. Install
 
 Package manager
 
 ```bash
-npm install bhr-maker
+npm install Reqeza
 ```
 
-# Example
+##### 2. Import and use
 
 To import BHR you have to use ECMAScript
 
 ```javascript
-import http from "bhr-maker";
+import Reqeza from "@Reqeza";
 ```
 
-Creating new instance of BHR to avoid rewriting url over and over again.
+Creating new instance of Reqeza to avoid rewriting url over and over again.
 
-```javascript
-import { createNewInstance } from "bhr-maker";
-
-const http = createNewInstance(
+```typescript
+const http = Reqeza.create(
+  // UpperCase always.
   PREFIX_URL: {
     API: "https://jsonplaceholder.typicode.com", // default
     API_2: "https://fakestoreapi.com"
   },
 );
+```
+
+Easy way to fetch data with methods shortcuts.
+
+```typescript
+// Responded data typing.
+interface Product {
+  id: number;
+  title: string;
+  ...
+  rating: Rating;
+}
+
+interface Rating {
+  rate: number;
+  count: number;
+}
 
 /*
  * if you have multiple prefixUrl you can specify which one you want by passing
  * ``PREFIX_URL: NAME`` to the config
-*/
-async function getData() {
-  const res = await http.get("/posts/1" , { PREFIX_URL: "API" });
+ */
 
-  console.log(res.data);
-}
-
-```
-
-Performing a GET request is made easy for you
-
-```javascript
-// Want to use async/await? Add the `async` keyword to your outer function/method.
-async function getPosts() {
+// TypeScript version
+async function getProduct() {
   try {
-    const res = await http.get("/posts");
-    console.log(res);
+    const { data } = await http
+      .get<Product>("/products/1", { PREFIX_URL: "API_2" })
+      .json();
+
+    console.log(data.title);
   } catch (error) {
     console.error(error);
   }
 }
 
-http
-  .get("posts")
-  .then((res) => {
-    console.log(res.data);
-  })
-  .catch((e) => {
-    console.error(e);
-  });
+// JavaScript version
+async function getProduct() {
+  try {
+    const { data } = await http.get("/products/1", { PREFIX_URL: "API_2" }).json();
+
+    console.log(data.title);
+  } catch (error) {
+    console.error(error);
+  }
+}
 ```
 
-Performing a POST request
+Performing a `POST` request
 
-```javascript
+```typescript
 async function addNewPost() {
   try {
     const res = await http.post("/posts", {
@@ -89,7 +102,7 @@ async function addNewPost() {
         title: "foo",
         body: "bar",
         userId: 1,
-      },
+      }, // send json post request
     });
     console.log(res);
   } catch (error) {
@@ -109,79 +122,69 @@ async function addNewPost() {
   formData.append("body", "bar");
   formData.append("userId", 1);
 
-  const data = await http.post("posts", {
-    body: formData,
-  });
+  const data = await http
+    .post("/posts", {
+      body: formData,
+    })
+    .json();
 }
 ```
 
-# API
+## API DOCUMENTATION
 
-#### Request method aliases
-
-We provided supported for all request methods.
-
-##### http.get(url[, config])
-
-##### http.delete(url[, config])
-
-##### http.head(url[, config])
-
-##### http.options(url[, config])
-
-##### http.post(url[, body or json, config])
-
-##### http.put(url[, body or json, config])
-
-##### http.patch(url[, body or json, config])
-
-### Creating an instance
-
-You can create a new instance of `BHR` with a custom config.
-` http.createNewInstance([config])`
-
-```javascript
-const instance = createNewInstance(
-  PREFIX_URL: "https://jsonplaceholder.typicode.com" // or
-  // You can pass an object of PREFIX_URL
-  PREFIX_URL: {
-    API: "https://jsonplaceholder.typicode.com", // this one is the default API
-    API_2: "https://fakestoreapi.com"
-  },
-);
+```typescript
+// Creating new instance of Reqeza to avoid rewriting url over and over again.
+http.create({ PREFIX_URL: string | { [name: string]: string } })
 ```
 
-### Request Config
+##### Request method aliases
 
-These are the available config options for making requests. Only the url is required.
+```typescript
 
-```javascript
-{
-  // To specify which api you wanna use from the instance
-  PREFIX_URL: "NAME", // default is the first on in the instance PREFIX_URL object
+// We provided supported for all request methods.
+http.get(url | path, options?) // Returns an Object of callable type-setters methods.
+// instead of `responseType`.
+  json() // By default
+  text()
+  blob()
+  arrayBuffer()
+  formData()
+http.delete(url | path, options?)
 
-  // `headers` are custom headers to be sent
-  headers: {
-    "Content-Type": "multipart/form-data; boundary=something"
-  },
+http.head(url | path, options?)
 
-  // `json` to send body as Content-Type JSON
-  json: {
-    "id":1,
-    "title":"Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
-    "price":109.95
-  },
+http.options(url | path, options?)
 
-  /*
-  * `body` to send data under one of these types Blob, BufferSource, FormData URLSearchParams,
-  * USVString or ReadableStream
-  */
-  body: FormData,
+http.post(url[, body or json])
 
-  // `responseType` indicates the type of data that the server will respond with
-  // options are: 'arraybuffer', 'document', 'json', 'text', 'stream', 'blob'
-  responseType: 'json', // default
+http.put(url[, body or json])
 
+http.patch(url[, body or json])
+```
+
+##### Request Config
+
+These are the available `options?` for making requests. Only the url is required.
+
+```typescript
+interface Options {
+  // To specify which source to fetch from.
+  // Using multiple prefixUrls, First will be called by default.
+  PREFIX_URL: string | { [name: string]: string }; // Case-sensitive UpperCase always.
+  // `headers` are custom headers to be sent.
+  headers: Object;
+  // `json` to send body as Content-Type JSON.
+  json: Object;
+  //  `body` to send data under one of these types -
+  body:
+    | Blob
+    | BufferSource
+    | FormData
+    | URLSearchParams
+    | USVString
+    | ReadableStream;
+  // `responseType` indicates the type of data that the server will respond with.
+  responseType: "json" | "text" | "blob" | "arrayBuffer" | "formData";
   // TODO: add ability to auth to your http request if it required
 
   // `auth` indicates that HTTP Basic auth should be used, and supplies credentials.
@@ -189,13 +192,14 @@ These are the available config options for making requests. Only the url is requ
   // `Authorization` custom headers you have set using `headers`.
   // Please note that only HTTP Basic auth is configurable through this parameter.
   // For Bearer tokens and such, use `Authorization` custom headers instead.
-  auth: {
-    username: 'janedoe',
-    password: 's00pers3cret'
-  },
+  auth: Auth;
+  // To cancel request using AbortController
+  signal: AbortController;
+}
 
-  // To cancel Http requests using AbortController
-  signal: new AbortController().signal,
+interface Auth {
+  username: string;
+  password: string;
 }
 ```
 
@@ -203,23 +207,23 @@ These are the available config options for making requests. Only the url is requ
 
 The response for a request contains the following information.
 
-```javascript
-{
-  // `config` is the config that was provided to the request
-  config: {},
-
+```typescript
+interface ResponseInterface<T> {
   // `data` is the response that was provided by the server
-  data: {},
-
-  // `status` is the HTTP status code from the server response
-  status: 200,
-
-  // `statusText` is the HTTP status message from the server response
-  statusText: 'OK',
-
+  data: T;
   // `headers` the HTTP headers that the server responded with
   // All header names are lower cased and can be accessed using the bracket notation.
   // Example: `response.headers['content-type']`
-  headers: {},
+  headers: unknown;
+  // `status` is the HTTP status code from the server response
+  status: number;
+  // `statusText` is the HTTP status message from the server response
+  statusText: string;
+  // `config` is the config that was provided to the request
+  config: Request;
 }
 ```
+
+## Authors
+
+- [@Omar Chadidi](https://github.com/FxOmar) ❤️

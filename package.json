@@ -1,16 +1,16 @@
 {
-  "name": "bhr-maker",
-  "version": "1.0.3",
-  "description": "",
+  "name": "reqeza",
+  "version": "2.0.3-beta",
+  "description": "Tiny JavaScript HTTP client based on browser Fetch API.",
   "source": "src/index.ts",
-  "main": "dist/main.js",
-  "module": "dist/bhr.mjs",
-  "types": "dist/types.d.ts",
+  "module": "@Reqeza/index.mjs",
+  "types": "@Reqeza/index.d.ts",
   "scripts": {
     "watch": "parcel watch",
-    "build": "parcel build",
+    "build": "tsup",
     "test": "jest",
-    "test-watch": "jest --watch"
+    "test:watch": "jest --watch --cache --runInBand --verbose",
+    "test:coverage": "jest --coverage"
   },
   "repository": {
     "type": "git",
@@ -23,26 +23,23 @@
   },
   "homepage": "https://github.com/FxOmar/BHR#readme",
   "devDependencies": {
-    "@babel/core": "^7.16.0",
-    "@babel/plugin-transform-runtime": "^7.16.4",
-    "@babel/preset-env": "^7.16.0",
-    "@babel/preset-typescript": "^7.16.0",
-    "@parcel/packager-ts": "^2.0.1",
-    "@parcel/transformer-typescript-types": "^2.0.1",
-    "@types/jest": "^27.0.2",
+    "@types/jest": "^29.0.3",
     "@typescript-eslint/eslint-plugin": "^5.3.0",
     "@typescript-eslint/parser": "^5.3.0",
-    "babel-jest": "^27.3.1",
     "eslint": "^8.1.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "jest": "^27.3.1",
-    "parcel": "^2.0.0",
+    "express": "^4.18.1",
+    "isomorphic-fetch": "^3.0.0",
+    "jest": "^29.0.3",
     "prettier": "2.4.1",
+    "ts-jest": "^29.0.1",
+    "ts-node": "^10.9.1",
+    "tsup": "^6.2.3",
     "typescript": "^4.5.3"
   },
-  "dependencies": {
-    "@babel/runtime": "^7.16.3",
-    "isomorphic-fetch": "^3.0.0"
+  "engines": {
+    "npm": ">=8.1.2",
+    "node": ">=16.13.1"
   }
 }
