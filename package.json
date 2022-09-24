@@ -6,7 +6,6 @@
   "module": "@Reqeza/index.mjs",
   "types": "@Reqeza/index.d.ts",
   "scripts": {
-    "watch": "parcel watch",
     "build": "tsup",
     "test": "jest",
     "test:watch": "jest --watch --cache --runInBand --verbose",
@@ -14,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FxOmar/BHR.git"
+    "url": "git@github.com:FxOmar/Reqeza.git"
   },
   "author": "Omar Chadidi",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/FxOmar/BHR/issues"
+    "url": "https://github.com/FxOmar/Reqeza/issues"
   },
-  "homepage": "https://github.com/FxOmar/BHR#readme",
+  "homepage": "https://github.com/FxOmar/Reqeza#readme",
   "devDependencies": {
     "@types/jest": "^29.0.3",
     "@typescript-eslint/eslint-plugin": "^5.3.0",
