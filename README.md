@@ -29,7 +29,7 @@ In the same directory as your package.json file, create or edit an .npmrc file t
 Install using npm
 
 ```bash
-npm install @fxomar/reqeza@2.1.5-beta
+npm install @fxomar/reqeza
 ```
 
 ##### 2. Import and use
