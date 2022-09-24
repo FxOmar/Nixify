@@ -2,10 +2,6 @@
 
 > Tiny JavaScript HTTP client based on browser [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
-# Description
-
-🌴 A tiny human-friendly JavaScript HTTP client library based on the browser with no dependencies.
-
 # Features
 
 - [x] Written in TypeScript, First-class TypeScript support
