@@ -1,8 +1,7 @@
 {
   "name": "reqeza",
-  "version": "2.0.3-beta",
+  "version": "2.1.5-beta",
   "description": "Tiny JavaScript HTTP client based on browser Fetch API.",
-  "source": "src/index.ts",
   "module": "@Reqeza/index.mjs",
   "types": "@Reqeza/index.d.ts",
   "scripts": {
@@ -40,5 +39,8 @@
   "engines": {
     "npm": ">=8.1.2",
     "node": ">=16.13.1"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }
