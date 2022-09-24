@@ -4,11 +4,8 @@
 name: Npm publish Package
 
 on:
-  push:
-    branches:
-      - "master"
-#   release:
-#     types: [created]
+  release:
+    types: [created]
 
 jobs:
   build:

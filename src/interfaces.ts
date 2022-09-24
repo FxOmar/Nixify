@@ -3,25 +3,26 @@ export interface Options {
 }
 
 export interface ResponseInterface<T> {
-  data: T;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: T | any;
   headers: unknown;
   status: number;
   statusText: string;
   config: Request;
 }
 
-type SetTypeMethod = <U>() => ResponseInterface<U>;
+type SetTypeMethod<R> = () => ResponseInterface<R>;
 
-export interface SetTypes {
-  json: SetTypeMethod;
-  text: SetTypeMethod;
-  blob: SetTypeMethod;
-  arrayBuffer: SetTypeMethod;
-  formData: SetTypeMethod;
+export interface SetTypes<R> {
+  json: SetTypeMethod<R>;
+  text: SetTypeMethod<R>;
+  blob: SetTypeMethod<R>;
+  arrayBuffer: SetTypeMethod<R>;
+  formData: SetTypeMethod<R>;
 }
 
-interface Thenable<U> extends SetTypes {
-  then<TResult1 = SetTypes, TResult2 = never>(
+interface Thenable<U> extends SetTypes<U> {
+  then<TResult1 = SetTypes<U>, TResult2 = never>(
     callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>
   ): Promise<TResult1 | TResult2>;
 }
