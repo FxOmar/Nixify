@@ -20,18 +20,24 @@
 
 ##### 1. Install
 
-Package manager
+In the same directory as your package.json file, create or edit an .npmrc file to include a line specifying GitHub Packages URL.
 
 ```bash
-npm install Reqeza
+@fxomar:registry=https://npm.pkg.github.com
+```
+
+Install using npm
+
+```bash
+npm install @fxomar/reqeza@2.1.5-beta
 ```
 
 ##### 2. Import and use
 
-To import BHR you have to use ECMAScript
+To import Reqeza you have to use ECMAScript
 
 ```javascript
-import Reqeza from "@Reqeza";
+import Reqeza from "@fxomar/reqeza";
 ```
 
 Creating new instance of Reqeza to avoid rewriting url over and over again.
