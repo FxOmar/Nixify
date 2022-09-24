@@ -3,8 +3,7 @@ export interface Options {
 }
 
 export interface ResponseInterface<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: T | any;
+  data: T;
   headers: unknown;
   status: number;
   statusText: string;
