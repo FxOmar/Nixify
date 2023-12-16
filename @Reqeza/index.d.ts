@@ -10,16 +10,16 @@ interface ResponseInterface<T> {
     statusText: string;
     config: Request;
 }
-declare type SetTypeMethod = <U>() => ResponseInterface<U>;
-interface SetTypes {
-    json: SetTypeMethod;
-    text: SetTypeMethod;
-    blob: SetTypeMethod;
-    arrayBuffer: SetTypeMethod;
-    formData: SetTypeMethod;
+declare type SetTypeMethod<R> = () => ResponseInterface<R>;
+interface SetTypes<R> {
+    json: SetTypeMethod<R>;
+    text: SetTypeMethod<R>;
+    blob: SetTypeMethod<R>;
+    arrayBuffer: SetTypeMethod<R>;
+    formData: SetTypeMethod<R>;
 }
-interface Thenable<U> extends SetTypes {
-    then<TResult1 = SetTypes, TResult2 = never>(callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>): Promise<TResult1 | TResult2>;
+interface Thenable<U> extends SetTypes<U> {
+    then<TResult1 = SetTypes<U>, TResult2 = never>(callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>): Promise<TResult1 | TResult2>;
 }
 declare type CreateNewInstance = {
     create: (config?: Options) => RequestMethods;
@@ -35,15 +35,21 @@ interface RequestMethods {
     options: RequestMethodsType;
 }
 interface MethodConfig {
+    path?: string;
     PREFIX_URL?: string;
-    path: string;
-    method: string;
+    qs?: {
+        [name: string]: queryType | number;
+    };
+    method?: string;
     body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
     json?: JSON;
-    headers?: Headers;
+    headers?: {
+        [name: string]: string;
+    };
     responseType?: string;
     signal?: AbortSignal;
 }
+declare type queryType = string | URLSearchParams | Record<string, string> | string[][];
 
 declare const _default: CreateNewInstance & RequestMethods;
 

@@ -1,4 +1,4 @@
-# Reqeza `beta_version`
+# Reqeza
 
 > Tiny JavaScript HTTP client based on browser [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
@@ -16,16 +16,10 @@
 
 ##### 1. Install
 
-In the same directory as your package.json file, create or edit an .npmrc file to include a line specifying GitHub Packages URL.
-
-```bash
-@fxomar:registry=https://npm.pkg.github.com
-```
-
 Install using npm
 
 ```bash
-npm install @fxomar/reqeza
+npm install reqeza
 ```
 
 ##### 2. Import and use
@@ -33,7 +27,7 @@ npm install @fxomar/reqeza
 To import Reqeza you have to use ECMAScript
 
 ```javascript
-import Reqeza from "@fxomar/reqeza";
+import Reqeza from "reqeza";
 ```
 
 Creating new instance of Reqeza to avoid rewriting url over and over again.
@@ -174,7 +168,7 @@ interface Options {
   // Using multiple prefixUrls, First will be called by default.
   PREFIX_URL: string | { [name: string]: string }; // Case-sensitive UpperCase always.
   // URL parameters to be sent with the request
-  // (e.g http.get(path, { qs: { name: "Joe" } }) )
+  // (e.g http.get(path, { qs: { name: "Joe" } }) = path?name=Joe )
   qs: { [name: string]: string | URLSearchParams | Record<string, string> | string[][] }
   // `headers` are custom headers to be sent.
   headers: Object;
