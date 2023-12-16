@@ -18,6 +18,11 @@ app.use(express.json()); // for parsing application/json
 app
   .route("/book")
   .get((req, res) => {
+    if (req.query.name) {
+      res.json({ message: req.query.name });
+      return;
+    }
+
     res.json({ message: "Hello, world" });
   })
   .post((req, res) => {

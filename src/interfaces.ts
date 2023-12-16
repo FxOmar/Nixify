@@ -46,12 +46,19 @@ export interface RequestMethods {
 }
 
 export interface MethodConfig {
+  path?: string;
   PREFIX_URL?: string;
-  path: string;
-  method: string;
+  qs?: { [name: string]: queryType }; // Object of queries.
+  method?: string;
   body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
   json?: JSON;
-  headers?: Headers;
+  headers?: { [name: string]: string };
   responseType?: string;
   signal?: AbortSignal;
 }
+
+export type queryType =
+  | string
+  | URLSearchParams
+  | Record<string, string>
+  | string[][];
