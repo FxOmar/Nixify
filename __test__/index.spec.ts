@@ -23,7 +23,7 @@ describe("Creating new instance of http.", () => {
       "options",
     ];
 
-    METHODS.forEach(async (prop) => {
+    METHODS.forEach((prop) => {
       expect(typeof http[prop]).toBe("function");
       expect(http).toHaveProperty(prop);
     });

@@ -173,6 +173,9 @@ interface Options {
   // To specify which source to fetch from.
   // Using multiple prefixUrls, First will be called by default.
   PREFIX_URL: string | { [name: string]: string }; // Case-sensitive UpperCase always.
+  // URL parameters to be sent with the request
+  // (e.g http.get(path, { qs: { name: "Joe" } }) )
+  qs: { [name: string]: string | URLSearchParams | Record<string, string> | string[][] }
   // `headers` are custom headers to be sent.
   headers: Object;
   // `json` to send body as Content-Type JSON.

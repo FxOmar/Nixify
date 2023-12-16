@@ -5,8 +5,9 @@ import {
   RequestMethods,
   RequestMethodsType,
   ResponseInterface,
+  queryType,
 } from "./interfaces";
-import { ValidationError, ResponseError } from "./utils";
+import { ValidationError, ResponseError, has } from "./utils";
 
 // All the HTTP request methods.
 const METHODS = ["get", "head", "put", "delete", "post", "patch", "options"];
@@ -23,23 +24,29 @@ class Http {
   }
 
   /**
-   * TODO: This Block of code need to be refactored it may cause us a problem in the future.
-   *
    * Parse the given URI
    */
   protected get __parseURI(): URL {
     try {
-      return new URL(
-        !Object.hasOwnProperty.call(this.__options, "PREFIX_URL")
-          ? this.__methodsConfig.path
-          : (typeof this.__options.PREFIX_URL === "object" &&
-            this.__options.PREFIX_URL !== null
-              ? this.__methodsConfig.PREFIX_URL
-                ? this.__options.PREFIX_URL[this.__methodsConfig.PREFIX_URL]
-                : Object.values(this.__options.PREFIX_URL)[0]
-              : this.__options.PREFIX_URL ?? this.__methodsConfig.PREFIX_URL) +
-            this.__methodsConfig.path
-      );
+      const BASE_URL =
+        !has(this.__options, "PREFIX_URL") || this.__options.PREFIX_URL === null
+          ? undefined
+          : typeof this.__options.PREFIX_URL === "object" &&
+            this.__methodsConfig.PREFIX_URL
+          ? this.__options.PREFIX_URL[this.__methodsConfig.PREFIX_URL]
+          : Object.values(this.__options.PREFIX_URL)[0];
+
+      const url = new URL(this.__methodsConfig.path, BASE_URL);
+
+      // https://felixgerschau.com/js-manipulate-url-search-params/
+      // Add queries to the url
+      has(this.__methodsConfig, "qs")
+        ? (url.search = new URLSearchParams(
+            this.__methodsConfig.qs as queryType
+          ).toString())
+        : null;
+
+      return url;
     } catch (error) {
       throw new ValidationError("The given URI is invalid.");
     }
@@ -53,16 +60,13 @@ class Http {
      */
     if (
       ["post", "put", "patch"].includes(this.__methodsConfig.method) &&
-      Object.hasOwnProperty.call(this.__methodsConfig, "json") &&
-      !Object.hasOwnProperty.call(
-        this.__methodsConfig,
-        "headers['Content-Type']"
-      )
+      has(this.__methodsConfig, "json") &&
+      !has(this.__methodsConfig, "headers['Content-Type']")
     ) {
       headersConfig.append("Content-Type", "application/json; charset=UTF-8");
     }
 
-    return new Request(this.__parseURI.href, {
+    return new Request(this.__parseURI.toString(), {
       method: this.__methodsConfig.method.toLocaleUpperCase(),
       headers: headersConfig,
       /*
@@ -104,11 +108,9 @@ class Http {
           return headers;
         };
 
-        const parseResponse = () => res[this.__methodsConfig.responseType]();
-
         // Response Schema
         const response: ResponseInterface<R> = {
-          data: await parseResponse(),
+          data: await res[this.__methodsConfig.responseType](),
           headers: retrieveHeaders(),
           status: res.status,
           statusText: res.statusText,
@@ -159,6 +161,7 @@ const Reqeza: CreateNewInstance = {
                 },
               }))
             ),
+            // https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
             then(callback) {
               return new Http(config, {
                 path,

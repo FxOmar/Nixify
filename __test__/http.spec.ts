@@ -12,7 +12,7 @@ describe("HTTP functionalities", () => {
     startServer();
 
     http = Reqeza.create({
-      PREFIX_URL: BASE_URL,
+      PREFIX_URL: {API: BASE_URL},
     });
   });
 
@@ -71,5 +71,27 @@ describe("HTTP functionalities", () => {
 
     expect(status).toBe(200);
     expect(data.message).toBe("Hello, world");
+  });
+
+  it("Should accept queries as a request option.", async () => {
+    const http = Reqeza.create({
+      PREFIX_URL: { 
+        API: BASE_URL, 
+        API2: BASE_URL,
+      },
+    });
+
+    const fakeDate = { name: "Rich dad, Poor dad" };
+
+    const { data, config } = await http.get<{ message: string }>("/book", {
+      PREFIX_URL: "API2",
+      qs: fakeDate,
+    });
+
+    const url = new URL(config.url);
+
+    expect(fakeDate.name).toBe(url.searchParams.get("name"));
+
+    expect(data).toEqual({ message: fakeDate.name });
   });
 });
