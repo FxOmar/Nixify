@@ -28,14 +28,14 @@ describe("API AUTH", () => {
             username: "testuser",
             password: "password"
         }
-    }).json()
+    }).json();
 
     expect(status).toBe(200);
     expect(data.access_token).toEqual(authToken)
   })
 
   it("Should Fetch user profile with Authentication token", async () => {
-    const { data, status, config } = await http.get<any>("/auth/profile", { headers: {
+    const { data, status, config } = await http.get("/auth/profile", { headers: {
         authorization: authToken
     }}).json();
 

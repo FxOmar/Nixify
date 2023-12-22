@@ -14,7 +14,8 @@ interface Thenable<U> extends ResponseHandlers<U> {
   ): Promise<TResult1 | TResult2>;
 }
 
-export type RequestMethodsType = <U>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RequestMethodsType = <U = any>(
   path: string,
   options?: MethodConfig
 ) => Thenable<U>;
@@ -28,7 +29,7 @@ export interface RequestMethods {
   patch: RequestMethodsType;
   options: RequestMethodsType;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setHeaders: (newHeaders: any) => void;
+  setHeaders: (newHeaders: Headers) => void;
 }
 
 export interface ResponseInterface<T> {
@@ -39,8 +40,7 @@ export interface ResponseInterface<T> {
   config: Request;
 }
 export interface ResponseHandlers<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  json: () => ResponseInterface<T | any>;
+  json: () => ResponseInterface<T>;
   text: () => ResponseInterface<string>;
   blob: () => ResponseInterface<Blob>;
   arrayBuffer: () => ResponseInterface<ArrayBuffer>;

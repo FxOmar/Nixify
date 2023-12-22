@@ -68,7 +68,7 @@ describe("HTTP functionalities", () => {
   it("Should fetch data with the given interface.", async () => {
     const { data, status } = await Reqeza.get<{ message: string }>(
       `${BASE_URL}/book`
-    ).json();
+    );
 
     expect(status).toBe(200);
     expect(data.message).toBe("Hello, world");
@@ -109,7 +109,7 @@ describe("HTTP functionalities", () => {
     const { data, config } = await http.get<{ message: string }>("/book", {
       PREFIX_URL: "API2",
       qs: {...fakeDate, limit: 5},
-    }).json();
+    })
 
     const url = new URL(config.url);
 

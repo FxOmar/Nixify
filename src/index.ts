@@ -5,6 +5,7 @@ import {
   Options,
   RequestMethods,
   RequestMethodsType,
+  ResponseInterface,
   queryType,
 } from "./interfaces";
 import { ResponseError, has } from "./utils";
@@ -69,7 +70,7 @@ const __configuration = (
  *
  * @returns {Promise<ResponseInterface>}
  */
-const httpAdapter = async (config: Options, methodConfig: MethodConfig) => {
+const httpAdapter = async <R>(config: Options, methodConfig: MethodConfig) => {
   const requestConfig = __configuration(config, methodConfig);
 
   // Call the beforeRequest hook for the main config if it exists
@@ -99,7 +100,7 @@ const httpAdapter = async (config: Options, methodConfig: MethodConfig) => {
       };
 
       // Response Schema
-      const response = {
+      const response: ResponseInterface<R> = {
         data: await res[methodConfig.responseType](),
         headers: retrieveHeaders(),
         status: res.status,
