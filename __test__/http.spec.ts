@@ -108,7 +108,7 @@ describe("HTTP functionalities", () => {
 
     const { data, config } = await http.get<{ message: string }>("/book", {
       PREFIX_URL: "API2",
-      qs: {...fakeDate, limit: 5},
+      qs: { ...fakeDate, limit: 5 },
     })
 
     const url = new URL(config.url);

@@ -47,16 +47,13 @@ export interface ResponseHandlers<T> {
   formData: () => ResponseInterface<FormData>;
 }
 
-export interface MethodConfig {
+export interface MethodConfig extends RequestInit {
   path?: string;
   PREFIX_URL?: string;
   qs?: { [name: string]: queryType | number }; // Object of queries.
-  method?: string;
   body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
   json?: object;
-  headers?: { [name: string]: string };
   responseType?: string;
-  signal?: AbortSignal;
   hooks?: { beforeRequest: (request: Request) => void };
 }
 
