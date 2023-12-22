@@ -1,11 +1,12 @@
 require("isomorphic-fetch");
 import Reqeza from "../src/index";
+import { RequestMethods } from "../src/interfaces";
 
 import { startServer, stopServer } from "../src/utils/testing-server";
 
 const BASE_URL = "http://localhost:3001";
 
-let http;
+let http: RequestMethods;
 
 describe("HTTP functionalities", () => {
   beforeAll(() => {
@@ -48,7 +49,7 @@ describe("HTTP functionalities", () => {
   });
 
   it("Should parse response with json by default.", async () => {
-    const { data, status } = await http.get("/book");
+    const { data, status } = await http.get("/book").json();
 
     expect(status).toBe(200);
 
@@ -67,11 +68,33 @@ describe("HTTP functionalities", () => {
   it("Should fetch data with the given interface.", async () => {
     const { data, status } = await Reqeza.get<{ message: string }>(
       `${BASE_URL}/book`
-    );
+    ).json();
 
     expect(status).toBe(200);
     expect(data.message).toBe("Hello, world");
   });
+
+  it("Should change header before send request", async () => {
+    let headers = null
+
+    const http = Reqeza.create({
+      PREFIX_URL: {
+        API: BASE_URL,
+      },
+      hooks: {
+        beforeRequest(request) {
+            headers = Object.assign({}, { Authorization: request.headers.get("Authorization") })
+            request.headers.set("Authorization", "Bearer YOUR_ACCESS_TOKEN")
+        },
+      }
+    });
+
+    const { data, status, config } = await http.get("/book").json()
+    
+    expect(status).toBe(200);
+    expect(headers.Authorization).not.toEqual(config.headers.get("Authorization"))
+
+  })
 
   it("Should accept queries as a request option.", async () => {
     const http = Reqeza.create({
@@ -85,8 +108,8 @@ describe("HTTP functionalities", () => {
 
     const { data, config } = await http.get<{ message: string }>("/book", {
       PREFIX_URL: "API2",
-      qs: fakeDate,
-    });
+      qs: {...fakeDate, limit: 5},
+    }).json();
 
     const url = new URL(config.url);
 

@@ -1,34 +1,18 @@
 export interface Options {
   PREFIX_URL?: { [name: string]: string } | string;
-}
-
-export interface ResponseInterface<T> {
-  data: T;
-  headers: unknown;
-  status: number;
-  statusText: string;
-  config: Request;
-}
-
-type SetTypeMethod<R> = () => ResponseInterface<R>;
-
-export interface SetTypes<R> {
-  json: SetTypeMethod<R>;
-  text: SetTypeMethod<R>;
-  blob: SetTypeMethod<R>;
-  arrayBuffer: SetTypeMethod<R>;
-  formData: SetTypeMethod<R>;
-}
-
-interface Thenable<U> extends SetTypes<U> {
-  then<TResult1 = SetTypes<U>, TResult2 = never>(
-    callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>
-  ): Promise<TResult1 | TResult2>;
+  headers?: { [key: string]: string };
+  hooks?: { beforeRequest: (request: Request) => void };
 }
 
 export type CreateNewInstance = {
   create: (config?: Options) => RequestMethods;
 };
+
+interface Thenable<U> extends ResponseHandlers<U> {
+  then<TResult1 = ResponseHandlers<U>, TResult2 = never>(
+    callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>
+  ): Promise<TResult1 | TResult2>;
+}
 
 export type RequestMethodsType = <U>(
   path: string,
@@ -43,6 +27,24 @@ export interface RequestMethods {
   post: RequestMethodsType;
   patch: RequestMethodsType;
   options: RequestMethodsType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setHeaders: (newHeaders: any) => void;
+}
+
+export interface ResponseInterface<T> {
+  data: T;
+  headers: { [key: string]: string };
+  status: number;
+  statusText: string;
+  config: Request;
+}
+export interface ResponseHandlers<T> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  json: () => ResponseInterface<T | any>;
+  text: () => ResponseInterface<string>;
+  blob: () => ResponseInterface<Blob>;
+  arrayBuffer: () => ResponseInterface<ArrayBuffer>;
+  formData: () => ResponseInterface<FormData>;
 }
 
 export interface MethodConfig {
@@ -51,10 +53,11 @@ export interface MethodConfig {
   qs?: { [name: string]: queryType | number }; // Object of queries.
   method?: string;
   body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
-  json?: JSON;
+  json?: object;
   headers?: { [name: string]: string };
   responseType?: string;
   signal?: AbortSignal;
+  hooks?: { beforeRequest: (request: Request) => void };
 }
 
 export type queryType =

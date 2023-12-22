@@ -18,7 +18,7 @@ export class ValidationError extends Error {
 
 export function ResponseError(response) {
   if (!response.ok) {
-    throw new ValidationError(response.statusText);
+    return new ValidationError(response.statusText);
   }
 
   return response;
