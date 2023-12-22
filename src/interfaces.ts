@@ -47,7 +47,7 @@ export interface ResponseHandlers<T> {
   formData: () => ResponseInterface<FormData>;
 }
 
-export interface MethodConfig extends RequestInit {
+export interface MethodConfig extends Omit<RequestInit, "method"> {
   path?: string;
   PREFIX_URL?: string;
   qs?: { [name: string]: queryType | number }; // Object of queries.

@@ -12,7 +12,8 @@ import { ResponseError, has } from "./utils";
 
 const __configuration = (
   config: Options,
-  methodConfig: MethodConfig
+  methodConfig: MethodConfig,
+  method: NonNullable<RequestInit["method"]>
 ): Request => {
   const __parseURI = new URL(
     methodConfig.path,
@@ -40,7 +41,7 @@ const __configuration = (
    * if body is json, then set headers to content-type JSON
    */
   if (
-    ["post", "put", "patch"].includes(methodConfig.method) &&
+    ["post", "put", "patch"].includes(method) &&
     has(methodConfig, "json") &&
     !has(methodConfig, "headers['Content-Type']")
   ) {
@@ -48,20 +49,27 @@ const __configuration = (
   }
 
   return new Request(__parseURI.toString(), {
-    method: methodConfig.method.toLocaleUpperCase(),
-    credentials: "same-origin",
+    method: method.toLocaleUpperCase(),
     headers: headersConfig,
     /*
      * Note: The body type can only be a Blob, BufferSource, FormData, URLSearchParams,
      * USVString or ReadableStream type,
      * so for adding a JSON object to the payload you need to stringify that object.
      */
-    body: Object.hasOwnProperty.call(methodConfig, "json")
+    body: has(methodConfig, "json")
       ? JSON.stringify(methodConfig.json)
       : methodConfig.body, // body data type must match "Content-Type" header
 
     // Cancel request
     signal: methodConfig.signal,
+    cache: methodConfig.cache,
+    credentials: methodConfig.credentials,
+    integrity: methodConfig.integrity,
+    keepalive: methodConfig.keepalive,
+    mode: methodConfig.mode,
+    redirect: methodConfig.redirect,
+    referrer: methodConfig.referrer,
+    referrerPolicy: methodConfig.referrerPolicy,
   });
 };
 
@@ -70,8 +78,12 @@ const __configuration = (
  *
  * @returns {Promise<ResponseInterface>}
  */
-const httpAdapter = async <R>(config: Options, methodConfig: MethodConfig) => {
-  const requestConfig = __configuration(config, methodConfig);
+const httpAdapter = async <R>(
+  config: Options,
+  method: NonNullable<RequestInit["method"]>,
+  methodConfig: MethodConfig
+) => {
+  const requestConfig = __configuration(config, methodConfig, method);
 
   // Call the beforeRequest hook for the main config if it exists
   config?.hooks?.beforeRequest &&
@@ -174,9 +186,8 @@ const Reqeza: CreateNewInstance = {
           ),
           // https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
           then(callback) {
-            httpAdapter(config, {
+            httpAdapter(config, method, {
               path,
-              method,
               headers,
               responseType,
               ...options,

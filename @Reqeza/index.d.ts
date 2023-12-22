@@ -41,20 +41,15 @@ interface ResponseHandlers<T> {
     arrayBuffer: () => ResponseInterface<ArrayBuffer>;
     formData: () => ResponseInterface<FormData>;
 }
-interface MethodConfig {
+interface MethodConfig extends Omit<RequestInit, "method"> {
     path?: string;
     PREFIX_URL?: string;
     qs?: {
         [name: string]: queryType | number;
     };
-    method?: string;
     body?: FormData | URLSearchParams | Blob | BufferSource | ReadableStream;
     json?: object;
-    headers?: {
-        [name: string]: string;
-    };
     responseType?: string;
-    signal?: AbortSignal;
     hooks?: {
         beforeRequest: (request: Request) => void;
     };

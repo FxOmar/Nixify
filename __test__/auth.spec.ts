@@ -23,7 +23,7 @@ describe("API AUTH", () => {
       });
 
   it("Should login /auth/login and return JWT tokens", async () => {
-    const { data, status } = await http.post("/auth/login", {
+    const { data, status, config } = await http.post("/auth/login", {
         json:{
             username: "testuser",
             password: "password"
