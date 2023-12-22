@@ -3,7 +3,6 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["./src/index.ts"],
   outDir: "@Reqeza",
-  sourcemap: true,
   clean: true,
   format: "esm",
   platform: "browser",

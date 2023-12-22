@@ -29,7 +29,7 @@ export interface RequestMethods {
   patch: RequestMethodsType;
   options: RequestMethodsType;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setHeaders: (newHeaders: Headers) => void;
+  setHeaders: (newHeaders: { [key: string]: string }) => void;
 }
 
 export interface ResponseInterface<T> {
@@ -65,3 +65,14 @@ export type queryType =
   | URLSearchParams
   | Record<string, string>
   | string[][];
+
+export interface NormalizedOptions extends RequestInit {
+  // eslint-disable-line @typescript-eslint/consistent-type-definitions
+  // Extended from `RequestInit`, but ensured to be set (not optional).
+  method: NonNullable<RequestInit["method"]>;
+  credentials: NonNullable<RequestInit["credentials"]>;
+
+  // Extended from custom `KyOptions`, but ensured to be set (not optional).
+  // retry: RetryOptions;
+  PREFIX_URL: string;
+}

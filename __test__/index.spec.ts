@@ -42,23 +42,4 @@ describe("Creating new instance of http.", () => {
       expect(http.get("/hello")).toHaveProperty(prop);
     });
   });
-  
-  // it("Should return error with invalid url.", async () => {
-  //   const http = Reqeza.create();
-
-  //   async function fetch() {
-  //     try {
-  //       const { data } = await http.get("fakestoreapi.com/products").json()
-  //       return data;
-  //     } catch (error) {
-  //       return error;
-  //     }
-  //   }
-
-  //   const res = await fetch();
-
-  //   console.log(res)
-
-  //   expect(res.toJSON().error.message).toBe("The given URI is invalid.");
-  // });
 });

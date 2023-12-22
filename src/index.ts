@@ -82,7 +82,7 @@ const httpAdapter = async <R>(config: Options, methodConfig: MethodConfig) => {
     (await methodConfig.hooks.beforeRequest(requestConfig));
 
   return fetch(requestConfig)
-    .then(ResponseError)
+    .then((res) => ResponseError(res, requestConfig, config))
     .then(async (res) => {
       /**
        * Retrieve response Header.
@@ -145,7 +145,7 @@ const Reqeza: CreateNewInstance = {
     let headers = {}; // Initial headers
 
     const Reqeza = {
-      setHeaders: (newHeaders: Headers) => {
+      setHeaders: (newHeaders) => {
         headers = { ...headers, ...newHeaders };
       },
     };

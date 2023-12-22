@@ -21,7 +21,9 @@ interface RequestMethods {
     post: RequestMethodsType;
     patch: RequestMethodsType;
     options: RequestMethodsType;
-    setHeaders: (newHeaders: Headers) => void;
+    setHeaders: (newHeaders: {
+        [key: string]: string;
+    }) => void;
 }
 interface ResponseInterface<T> {
     data: T;
@@ -67,7 +69,9 @@ declare const _default: {
     post: RequestMethodsType;
     patch: RequestMethodsType;
     options: RequestMethodsType;
-    setHeaders: (newHeaders: Headers) => void;
+    setHeaders: (newHeaders: {
+        [key: string]: string;
+    }) => void;
     create: (config?: Options) => RequestMethods;
 };
 

@@ -117,4 +117,25 @@ describe("HTTP functionalities", () => {
 
     expect(data).toEqual({ message: fakeDate.name });
   });
+
+  it("Should set header using function helper setHeader", async () => {
+    const http = Reqeza.create({
+      PREFIX_URL: {
+        API: BASE_URL,
+      },
+    });
+
+    const header = { "Cache-Control": "max-age=604800" }
+
+    http.setHeaders(header)
+
+    const { config } = await http.get("/book").json();
+
+    expect(config.headers.get("Cache-Control")).toEqual(header["Cache-Control"])
+
+  })
+
+  // it("Should return error with invalid url.", async () => {
+  //   await expect(http.get("/products").json()).rejects.toThrow("HTTPError: Request failed with status code 404 Not Found")
+  // });
 });
