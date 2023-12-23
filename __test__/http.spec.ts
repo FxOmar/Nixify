@@ -13,7 +13,7 @@ describe("HTTP functionalities", () => {
     startServer();
 
     http = Reqeza.create({
-      PREFIX_URL: {API: BASE_URL},
+      PREFIX_URL: BASE_URL,
     });
   });
 

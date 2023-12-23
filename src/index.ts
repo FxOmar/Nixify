@@ -8,7 +8,7 @@ import {
   ResponseInterface,
   queryType,
 } from "./interfaces";
-import { ResponseError, has } from "./utils";
+import { ResponseError, getBaseUrl, has } from "./utils";
 
 const __configuration = (
   config: Options,
@@ -17,11 +17,7 @@ const __configuration = (
 ): Request => {
   const __parseURI = new URL(
     methodConfig.path,
-    !has(config, "PREFIX_URL") || config.PREFIX_URL === null
-      ? undefined
-      : typeof config.PREFIX_URL === "object" && methodConfig.PREFIX_URL
-      ? config.PREFIX_URL[methodConfig.PREFIX_URL]
-      : Object.values(config.PREFIX_URL)[0]
+    getBaseUrl(config, methodConfig)
   );
 
   // https://felixgerschau.com/js-manipulate-url-search-params/
