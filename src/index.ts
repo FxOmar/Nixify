@@ -8,7 +8,7 @@ import {
   ResponseInterface,
   queryType,
 } from "./interfaces";
-import { ResponseError, getBaseUrl, has } from "./utils";
+import { ResponseError, getBaseUrl, has, caseless } from "./utils";
 
 const __configuration = (
   config: Options,
@@ -33,17 +33,6 @@ const __configuration = (
     ...methodConfig?.headers,
   });
 
-  /**
-   * if body is json, then set headers to content-type JSON
-   */
-  if (
-    ["post", "put", "patch"].includes(method) &&
-    has(methodConfig, "json") &&
-    !has(methodConfig, "headers['Content-Type']")
-  ) {
-    headersConfig.append("Content-Type", "application/json; charset=UTF-8");
-  }
-
   return new Request(__parseURI.toString(), {
     method: method.toLocaleUpperCase(),
     headers: headersConfig,
@@ -52,9 +41,7 @@ const __configuration = (
      * USVString or ReadableStream type,
      * so for adding a JSON object to the payload you need to stringify that object.
      */
-    body: has(methodConfig, "json")
-      ? JSON.stringify(methodConfig.json)
-      : methodConfig.body, // body data type must match "Content-Type" header
+    body: methodConfig.body,
 
     // Cancel request
     signal: methodConfig.signal,
@@ -150,11 +137,15 @@ const Reqeza: CreateNewInstance = {
 
     const responseTypes = ["json", "text", "blob", "arrayBuffer", "formData"];
 
-    let headers = {}; // Initial headers
+    const headers = {}; // Initial headers
+
+    const _caseless = caseless(headers);
 
     const Reqeza = {
-      setHeaders: (newHeaders) => {
-        headers = { ...headers, ...newHeaders };
+      setHeaders(newHeader) {
+        for (const key in newHeader) {
+          _caseless.set(key, newHeader[key]);
+        }
       },
     };
 
@@ -167,6 +158,20 @@ const Reqeza: CreateNewInstance = {
         options?: MethodConfig
       ): RequestMethodsType => {
         let responseType = "json";
+
+        /**
+         * if body is json, then set headers to content-type JSON
+         */
+        if (
+          ["post", "put", "patch", "delete"].includes(method) &&
+          has(options, "json")
+        ) {
+          options.body = JSON.stringify(options.json);
+          Reqeza.setHeaders({
+            "Content-Type": "application/json; charset=UTF-8",
+          });
+          delete options.json;
+        }
 
         // Response types methods generator.
         const responseHandlers = {

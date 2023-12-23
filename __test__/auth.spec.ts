@@ -14,7 +14,7 @@ describe("API AUTH", () => {
         startServer();
     
         http = Reqeza.create({
-          PREFIX_URL: { API: BASE_URL },
+              PREFIX_URL: BASE_URL,
         });
       });
     
@@ -30,14 +30,14 @@ describe("API AUTH", () => {
         }
     }).json();
 
+    http.setHeaders({ authorization: data.access_token })
+
     expect(status).toBe(200);
     expect(data.access_token).toEqual(authToken)
   })
 
   it("Should Fetch user profile with Authentication token", async () => {
-    const { data, status, config } = await http.get("/auth/profile", { headers: {
-        authorization: authToken
-    }}).json();
+    const { data, status, config } = await http.get("/auth/profile").json();
 
     expect(status).toBe(200);
     expect(data.profile.fullName).toEqual("Test User")

@@ -29,3 +29,42 @@ export function getBaseUrl(config, methodConfig) {
 
   return undefined;
 }
+
+/**
+ * Based on: https://github.com/request/caseless/blob/master/index.js
+ */
+class Caseless {
+  private dict;
+
+  constructor(dict = {}) {
+    this.dict = dict;
+  }
+
+  set(name, value, clobber?) {
+    if (typeof name === "object") {
+      for (const i in name) {
+        this.set(i, name[i], value);
+      }
+    } else {
+      if (typeof clobber === "undefined") clobber = true;
+      const has = this.has(name);
+
+      if (!clobber && has) this.dict[has] = `${this.dict[has]},${value}`;
+      else this.dict[has || name] = value;
+      return has;
+    }
+  }
+
+  has(name) {
+    const keys = Object.keys(this.dict);
+    name = name.toLowerCase();
+    for (let i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === name) return keys[i];
+    }
+    return false;
+  }
+}
+
+export const caseless = (dict: object) => {
+  return new Caseless(dict);
+};
