@@ -102,6 +102,9 @@ describe("HTTP functionalities", () => {
         API: BASE_URL, 
         API2: BASE_URL,
       },
+      qs: {
+        arrayFormat: "bracket"
+      }
     });
 
     const fakeDate = { name: "Rich dad, Poor dad" };

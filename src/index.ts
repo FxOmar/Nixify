@@ -6,26 +6,26 @@ import {
   RequestMethods,
   RequestMethodsType,
   ResponseInterface,
-  queryType,
 } from "./interfaces";
-import { ResponseError, getBaseUrl, has, caseless } from "./utils";
+import { ResponseError, getBaseUrl, has, caseless, qs } from "./utils";
 
 const __configuration = (
   config: Options,
   methodConfig: MethodConfig,
   method: NonNullable<RequestInit["method"]>
 ): Request => {
-  const __parseURI = new URL(
-    methodConfig.path,
-    getBaseUrl(config, methodConfig)
-  );
+  const BASE_URL = new URL(methodConfig.path, getBaseUrl(config, methodConfig));
 
   // https://felixgerschau.com/js-manipulate-url-search-params/
   // Add queries to the url
+  /**
+   * Reqeza.create({
+   *  PREFIX_URL: path,
+   *  qs: { strict: true }
+   * })
+   **/
   has(methodConfig, "qs")
-    ? (__parseURI.search = new URLSearchParams(
-        methodConfig.qs as queryType
-      ).toString())
+    ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs))
     : null;
 
   const headersConfig = new Headers({
@@ -33,7 +33,7 @@ const __configuration = (
     ...methodConfig?.headers,
   });
 
-  return new Request(__parseURI.toString(), {
+  return new Request(BASE_URL.toString(), {
     method: method.toLocaleUpperCase(),
     headers: headersConfig,
     /*
@@ -133,9 +133,15 @@ const Reqeza: CreateNewInstance = {
       "post",
       "patch",
       "options",
-    ];
+    ] as const;
 
-    const responseTypes = ["json", "text", "blob", "arrayBuffer", "formData"];
+    const responseTypes = {
+      json: "application/json",
+      text: "text/*",
+      formData: "multipart/form-data",
+      arrayBuffer: "*/*",
+      blob: "*/*",
+    } as const;
 
     const headers = {}; // Initial headers
 
@@ -177,8 +183,12 @@ const Reqeza: CreateNewInstance = {
         const responseHandlers = {
           ...Object.assign(
             {},
-            ...responseTypes.map((typeName) => ({
+            ...Object.entries(responseTypes).map(([typeName, mimeType]) => ({
               [typeName]: () => {
+                Reqeza.setHeaders({
+                  accept: mimeType,
+                });
+
                 responseType = typeName;
 
                 return responseHandlers;

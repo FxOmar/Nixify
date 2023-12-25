@@ -1,5 +1,7 @@
 export { HTTPError, ResponseError } from "./errors";
 
+export { qs } from "./qs";
+
 export function mergeObjects(target = {}, source) {
   return Object.assign(target, ...source);
 }
