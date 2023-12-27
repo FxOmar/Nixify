@@ -136,9 +136,34 @@ describe("HTTP functionalities", () => {
 
     expect(config.headers.get("Cache-Control")).toEqual(header["Cache-Control"])
 
-  })
+  it("Should Ensure proper merging of method header and global header", async () => {
+    const http = Reqeza.create({
+      PREFIX_URL: {
+        API: BASE_URL,
+      },
+      headers: {
+        'Custom-Header': 'customValue',
+      }
+    });
 
-  // it("Should return error with invalid url.", async () => {
-  //   await expect(http.get("/products").json()).rejects.toThrow("HTTPError: Request failed with status code 404 Not Found")
-  // });
+    const header = { "Cache-Control": "max-age=604800" }
+    const customHeader = { Date: "Tue, 21 Dec 2021 08:00:00 GMT" }
+
+    http.setHeaders(header)
+
+    const { config } = await http.get("/book").json();
+    const { config: { headers } } = await http.get("/book", { headers: customHeader }).json();
+
+    console.log(config.headers, headers)
+
+    const expectedHeaders = expect.objectContaining(config.headers)
+
+    expect(config.headers.get("Cache-Control")).toBe(header["Cache-Control"])
+    expect(config.headers.get("Date")).toBeNull()
+    expect(config.headers.get("Custom-Header")).toBe("customValue")
+    
+    // Check if it have global headers
+    expect(headers).toEqual(expectedHeaders)
+    expect(headers.get("Date")).toBeTruthy()
+  });
 });

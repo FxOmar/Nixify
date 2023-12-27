@@ -7,7 +7,18 @@ import {
   RequestMethodsType,
   ResponseInterface,
 } from "./interfaces";
-import { ResponseError, getBaseUrl, has, caseless, qs } from "./utils";
+import {
+  ResponseError,
+  getBaseUrl,
+  has,
+  caseless,
+  qs,
+  mergeHeaders,
+} from "./utils";
+
+const headers = {}; // Initial headers
+
+const _caseless = caseless(headers);
 
 const __configuration = (
   config: Options,
@@ -28,10 +39,20 @@ const __configuration = (
     ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs))
     : null;
 
-  const headersConfig = new Headers({
-    ...config?.headers,
-    ...methodConfig?.headers,
-  });
+  let headersConfig = new Headers(headers);
+
+  if (methodConfig.headers) {
+    headersConfig = mergeHeaders(headersConfig, methodConfig.headers);
+  }
+
+  /**
+   * if body is json, then set headers to content-type JSON
+   */
+  if (has(methodConfig, "json")) {
+    methodConfig.body = JSON.stringify(methodConfig.json);
+    headersConfig.append("Content-Type", "application/json; charset=UTF-8");
+    delete methodConfig.json;
+  }
 
   return new Request(BASE_URL.toString(), {
     method: method.toLocaleUpperCase(),
@@ -143,10 +164,6 @@ const Reqeza: CreateNewInstance = {
       blob: "*/*",
     } as const;
 
-    const headers = {}; // Initial headers
-
-    const _caseless = caseless(headers);
-
     const Reqeza = {
       setHeaders(newHeader) {
         for (const key in newHeader) {
@@ -154,6 +171,10 @@ const Reqeza: CreateNewInstance = {
         }
       },
     };
+
+    if (config?.headers) {
+      Reqeza.setHeaders(config.headers);
+    }
 
     /**
      * Build methods shortcut *Http.get().text()*.
@@ -165,18 +186,8 @@ const Reqeza: CreateNewInstance = {
       ): RequestMethodsType => {
         let responseType = "json";
 
-        /**
-         * if body is json, then set headers to content-type JSON
-         */
-        if (
-          ["post", "put", "patch", "delete"].includes(method) &&
-          has(options, "json")
-        ) {
-          options.body = JSON.stringify(options.json);
           Reqeza.setHeaders({
-            "Content-Type": "application/json; charset=UTF-8",
           });
-          delete options.json;
         }
 
         // Response types methods generator.
@@ -199,7 +210,6 @@ const Reqeza: CreateNewInstance = {
           then(callback) {
             httpAdapter(config, method, {
               path,
-              headers,
               responseType,
               ...options,
             }).then(callback);
