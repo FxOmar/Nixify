@@ -54,6 +54,13 @@ const __configuration = (
     delete methodConfig.json;
   }
 
+  if (methodConfig?.body instanceof URLSearchParams) {
+    headersConfig.append(
+      "Content-Type",
+      "application/x-www-form-urlencoded;charset=utf-8"
+    );
+  }
+
   return new Request(BASE_URL.toString(), {
     method: method.toLocaleUpperCase(),
     headers: headersConfig,

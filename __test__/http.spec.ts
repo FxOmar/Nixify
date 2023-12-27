@@ -135,6 +135,24 @@ describe("HTTP functionalities", () => {
     const { config } = await http.get("/book").json();
 
     expect(config.headers.get("Cache-Control")).toEqual(header["Cache-Control"])
+  });
+
+  it("Should send URLSearchParams as body.", async () => {
+    const http = Reqeza.create({
+      PREFIX_URL: {
+        API: BASE_URL,
+      },
+    });
+
+    const title = "Think and grow rich";
+
+    const { status, config } = await http.post("/book", {
+      body: new URLSearchParams({ title })
+    }).json();
+
+    expect(status).toBe(200)
+    expect(config.headers.get("Content-Type")).toBe("application/x-www-form-urlencoded;charset=utf-8")
+  });
 
   it("Should Ensure proper merging of method header and global header", async () => {
     const http = Reqeza.create({

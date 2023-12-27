@@ -16,6 +16,7 @@ const config = {
 
 app.use(express.json()); // for parsing application/json
 app.use(bodyParser.json()); // Middleware to parse JSON requests
+app.use(bodyParser.urlencoded({ extended: true })); // Use body-parser middleware to parse URL-encoded bodies
 
 app
   .route("/book")
@@ -28,7 +29,9 @@ app
     res.json({ message: "Hello, world" });
   })
   .post((req, res) => {
-    res.json({ title: req.body.title, message: "Book added successfully." });
+    res
+      .status(200)
+      .json({ title: req.body.title, message: "Book added successfully." });
   })
   .put((req, res) => {
     res.send("Update the book");
