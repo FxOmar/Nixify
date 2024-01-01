@@ -103,20 +103,6 @@ const httpAdapter = async <R>(
 ) => {
   const requestConfig = __configuration(config, methodConfig, method);
 
-  // if (methodConfig.auth === false) {
-  //   requestConfig.headers.delete("Authorization");
-  // } else if (requestConfig.headers.get("Authorization")) {
-  //   methodConfig.auth = true;
-  // }
-
-  // Call the beforeRequest hook for the main config if it exists
-  // config?.hooks?.beforeRequest &&
-  //   (await config.hooks.beforeRequest(requestConfig));
-
-  // // Call the beforeRequest hook for the method config if it exists
-  // methodConfig?.hooks?.beforeRequest &&
-  //   (await methodConfig.hooks.beforeRequest(requestConfig));
-
   return fetch(requestConfig)
     .then((res) => ResponseError(res, requestConfig, config))
     .then(async (res) => {
@@ -187,7 +173,7 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
   } as const;
 
   const obj = {};
-  // console.log(config.headers);
+
   /**
    * Build methods shortcut *Http.get().text()*.
    */
@@ -239,27 +225,50 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 };
 
 /**
- * Create new instance for the given configuration.
+ * Factory function for creating an HTTP client with configurable service instances.
  *
- * @param {ServiceConfig} config
- *
- * @returns {Methods} - new instance of Http
+ * @function create
+ * @param {Object} [config=null] - Configuration object for defining service instances with their respective URLs and headers.
+ * @returns {Object} An HTTP client with service instances and utility functions.
+ * @property {Function} setHeaders - Sets headers globally for all service instances.
+ * @property {Object} {service} - Individual service instance with methods for making HTTP requests.
+ * @property {Function} {service}.setHeaders - Sets headers for a specific service instance.
+ * @property {Function} beforeRequest - Global hook to set headers before making HTTP requests.
+ * @property {Function} {service}.beforeRequest - Service-specific hook to set headers before making HTTP requests for a specific service.
  *
  * @example
  * const http = Reqeza.create({
  *    github: {
  *      url: "https://api.github.com",
  *      headers: {
- *        "x-API-KEY": "[GITHUB_TOKEN]"
+ *        "x-API-KEY": "[TOKEN]"
  *      }
  *    },
  *    gitlab: {
  *      url: "https://gitlab.com/api/v4/",
  *      headers: {}
  *    },
- * })
+ * });
  *
- * await http.{github}.get('/search/repositories').json()
+ * // Set headers for a specific service instance
+ * http.gitlab.setHeaders({ "authorization": `Bearer ${token}` });
+ *
+ * // Set headers globally
+ * http.setHeaders({ "authorization": `Bearer ${token}` });
+ *
+ * // Set headers before making a request for a specific service instance
+ * http.gitlab.beforeRequest(request => {
+ *   // Modify request headers or perform other actions
+ * });
+ *
+ * // Set headers globally before making a request
+ * http.beforeRequest(request => {
+ *   request.headers.set("Content-type", "application/json");
+ * });
+ *
+ * // Make HTTP requests
+ * await http.get('https://api.github.com/search/repositories', { headers: {} }).json();
+ * await http.github.get('/search/repositories').json();
  */
 const create = <T extends ServiceConfig>(
   config?: T
@@ -293,33 +302,3 @@ const create = <T extends ServiceConfig>(
 
 // Merge request methods with Reqeza Object.
 export default { create };
-
-/**
- * const http = Reqeza.create({
- *    github: {
- *      url: "https://api.github.com",
- *      headers: {
- *        "x-API-KEY": "[TOKEN]"
- *      }
- *    },
- *    gitlab: {
- *      url: "https://gitlab.com/api/v4/",
- *      headers: {}
- *    },
- * })
- *
- * http.{gitlab}.setHeaders({ "authorization": `Bearer ${token}` })
- * http.setHeaders({ "authorization": `Bearer ${token}` })
- *
- * Set Headers to a specific prefix
- * http.{gitlab}.beforeRequest(request) {
- * }
- *
- * Set Headers globally
- * http.beforeRequest(request) {
- *   request.headers.set("Content-type", "application/json")
- * }
- *
- * await http.get('https://api.github.com/search/repositories', { headers: {} }).json()
- * await http.github.get('/search/repositories').json()
- */
