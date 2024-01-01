@@ -172,13 +172,13 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
     blob: "*/*",
   } as const;
 
-  const obj = {};
+  const httpShortcuts = {};
 
   /**
    * Build methods shortcut *Http.get().text()*.
    */
   methods.forEach((method) => {
-    obj[method] = (
+    httpShortcuts[method] = (
       path: string,
       options?: MethodConfig
     ): RequestMethodsType => {
@@ -221,7 +221,7 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
     };
   });
 
-  return obj as RequestMethods;
+  return httpShortcuts as RequestMethods;
 };
 
 /**
@@ -289,7 +289,7 @@ const create = <T extends ServiceConfig>(
     )
   );
 
-  const returnedInstance = isEmpty(config)
+  const resultingInstances = isEmpty(config)
     ? { ...instances.default }
     : {
         ...instances,
@@ -297,7 +297,7 @@ const create = <T extends ServiceConfig>(
         setHeaders: (newHeaders) => setHeaders(headers, newHeaders),
       };
 
-  return returnedInstance as XOR<ServiceReqMethods<T>, RequestMethods>;
+  return resultingInstances as XOR<ServiceReqMethods<T>, RequestMethods>;
 };
 
 // Merge request methods with Reqeza Object.
