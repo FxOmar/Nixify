@@ -1,5 +1,4 @@
 import express from "express";
-import bodyParser from "body-parser";
 
 const app = express();
 
@@ -7,16 +6,14 @@ const app = express();
 const config = {
   hostname: "localhost",
   port: 3001,
-  logsEnabled: 0,
-  pages: {},
 };
 
 // const status200 = 200;
 // const status404 = 404;
 
 app.use(express.json()); // for parsing application/json
-app.use(bodyParser.json()); // Middleware to parse JSON requests
-app.use(bodyParser.urlencoded({ extended: true })); // Use body-parser middleware to parse URL-encoded bodies
+app.use(express.json()); // Middleware to parse JSON requests
+app.use(express.urlencoded({ extended: true })); // Use body-parser middleware to parse URL-encoded bodies
 
 app
   .route("/book")
@@ -94,20 +91,14 @@ app.get("/auth/profile", (req, res) => {
   }
 });
 
-let server;
-
 export function startServer() {
-  server = app
-    .listen(config.port, () => {
-      console.log(
-        `Server running at http://${config.hostname}:${config.port}/`
-      );
-    })
-    .on("error", (err) => console.log("Error starting server:", err));
+  return app.listen(config.port, () => {
+    console.log(`Server running at http://${config.hostname}:${config.port}/`);
+  });
 }
 
-export function stopServer() {
-  server
-    .close()
-    .on("error", (err) => console.log("Error stopping server:", err));
-}
+// export function stopServer() {
+//   server
+//     .close()
+//     .on("error", (err) => console.log("Error stopping server:", err));
+// }

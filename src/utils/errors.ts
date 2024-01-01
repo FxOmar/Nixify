@@ -2,18 +2,17 @@
  *  Code source.
  *  https://github.com/sindresorhus/ky/blob/main/source/errors/HTTPError.ts
  */
-
-import { NormalizedOptions } from "../interfaces";
+// import { NormalizedOptions } from "../interfaces";
 
 export class HTTPError extends Error {
   public response: Response;
   public request: Request;
-  public options: NormalizedOptions;
+  // public options: NormalizedOptions;
 
   constructor(
     response: Response,
-    request: Request,
-    options: NormalizedOptions
+    request: Request
+    // options: NormalizedOptions
   ) {
     const code =
       response.status || response.status === 0 ? response.status : "";
@@ -26,13 +25,14 @@ export class HTTPError extends Error {
     this.name = "HTTPError";
     this.response = response;
     this.request = request;
-    this.options = options;
+    // this.options = options;
   }
 }
 
 export function ResponseError(response, request, config) {
+  // non-2xx HTTP responses into errors:
   if (!response.ok) {
-    throw new HTTPError(response, request, config);
+    throw new HTTPError(response, request);
   }
 
   return response;

@@ -1,13 +1,32 @@
+export type HttpMethod =
+  | "get"
+  | "head"
+  | "put"
+  | "delete"
+  | "post"
+  | "patch"
+  | "options";
+
+export type ResponseTypes = {
+  json: "application/json";
+  text: "text/*";
+  formData: "multipart/form-data";
+  arrayBuffer: "*/*";
+  blob: "*/*";
+};
+
+export type XOR<T, U> = T | U extends object
+  ? (T & Record<string, never>) | (U & Record<string, never>)
+  : T | U;
+
 export interface Options {
-  PREFIX_URL?: { [name: string]: string } | string;
+  url: string;
   headers?: { [key: string]: string };
-  hooks?: { beforeRequest: (request: Request) => void };
+  //   hooks?: { beforeRequest: (request: Request) => void };
   qs?: StringifyOptions;
 }
 
-export type CreateNewInstance = {
-  create: (config?: Options) => RequestMethods;
-};
+export type ServiceConfig = { [key: string]: Options };
 
 interface Thenable<U> extends ResponseHandlers<U> {
   then<TResult1 = ResponseHandlers<U>, TResult2 = never>(
@@ -33,6 +52,12 @@ export interface RequestMethods {
   setHeaders: (newHeaders: { [key: string]: string }) => void;
 }
 
+export type ServiceReqMethods<T extends ServiceConfig> = {
+  [K in keyof T]: RequestMethods;
+};
+
+// export interface CreateReturnValue extends ServiceReqMethods, RequestMethods {}
+
 export interface ResponseInterface<T> {
   data: T;
   headers: { [key: string]: string };
@@ -54,7 +79,8 @@ export interface MethodConfig extends Omit<RequestInit, "method"> {
   qs?: { [name: string]: queryType | number }; // Object of queries.
   json?: object;
   responseType?: string;
-  hooks?: { beforeRequest: (request: Request) => void };
+  //   hooks?: { beforeRequest: (request: Request) => void };
+  auth?: boolean | { username: string; password: string };
 }
 
 export type queryType =
@@ -69,7 +95,7 @@ export interface NormalizedOptions extends RequestInit {
   method: NonNullable<RequestInit["method"]>;
   credentials: NonNullable<RequestInit["credentials"]>;
 
-  // Extended from custom `KyOptions`, but ensured to be set (not optional).
+  // Extended from custom `Options`, but ensured to be set (not optional).
   // retry: RetryOptions;
   PREFIX_URL: string;
 }

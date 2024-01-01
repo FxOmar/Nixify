@@ -1,49 +1,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  CreateNewInstance,
+import type {
   MethodConfig,
   Options,
   RequestMethods,
   RequestMethodsType,
   ResponseInterface,
+  ServiceConfig,
+  ServiceReqMethods,
+  XOR,
 } from "./interfaces";
 import {
   ResponseError,
-  getBaseUrl,
   has,
-  caseless,
   qs,
   mergeHeaders,
+  isEmpty,
+  setHeaders,
 } from "./utils";
 
 const headers = {}; // Initial headers
-
-const _caseless = caseless(headers);
 
 const __configuration = (
   config: Options,
   methodConfig: MethodConfig,
   method: NonNullable<RequestInit["method"]>
 ): Request => {
-  const BASE_URL = new URL(methodConfig.path, getBaseUrl(config, methodConfig));
+  const BASE_URL = new URL(methodConfig.path, config?.url ?? undefined);
+
+  if (BASE_URL.protocol !== "https:" && BASE_URL.protocol !== "http:") {
+    throw new TypeError(`Unsupported protocol, ${BASE_URL.protocol}`);
+  }
+
+  if (methodConfig.signal && !(methodConfig.signal instanceof AbortSignal))
+    throw new TypeError(
+      typeof methodConfig.signal +
+        " received for signal, but expected an AbortSignal"
+    );
 
   // https://felixgerschau.com/js-manipulate-url-search-params/
   // Add queries to the url
-  /**
-   * Reqeza.create({
-   *  PREFIX_URL: path,
-   *  qs: { strict: true }
-   * })
-   **/
   has(methodConfig, "qs")
     ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs))
     : null;
 
-  let headersConfig = new Headers(headers);
-
-  if (methodConfig.headers) {
-    headersConfig = mergeHeaders(headersConfig, methodConfig.headers);
-  }
+  let headersConfig = new Headers({
+    ...headers,
+    ...config?.headers,
+  });
 
   /**
    * if body is json, then set headers to content-type JSON
@@ -59,6 +62,10 @@ const __configuration = (
       "Content-Type",
       "application/x-www-form-urlencoded;charset=utf-8"
     );
+  }
+
+  if (methodConfig.headers) {
+    headersConfig = mergeHeaders(headersConfig, methodConfig.headers);
   }
 
   return new Request(BASE_URL.toString(), {
@@ -96,13 +103,19 @@ const httpAdapter = async <R>(
 ) => {
   const requestConfig = __configuration(config, methodConfig, method);
 
-  // Call the beforeRequest hook for the main config if it exists
-  config?.hooks?.beforeRequest &&
-    (await config.hooks.beforeRequest(requestConfig));
+  // if (methodConfig.auth === false) {
+  //   requestConfig.headers.delete("Authorization");
+  // } else if (requestConfig.headers.get("Authorization")) {
+  //   methodConfig.auth = true;
+  // }
 
-  // Call the beforeRequest hook for the method config if it exists
-  methodConfig?.hooks?.beforeRequest &&
-    (await methodConfig.hooks.beforeRequest(requestConfig));
+  // Call the beforeRequest hook for the main config if it exists
+  // config?.hooks?.beforeRequest &&
+  //   (await config.hooks.beforeRequest(requestConfig));
+
+  // // Call the beforeRequest hook for the method config if it exists
+  // methodConfig?.hooks?.beforeRequest &&
+  //   (await methodConfig.hooks.beforeRequest(requestConfig));
 
   return fetch(requestConfig)
     .then((res) => ResponseError(res, requestConfig, config))
@@ -123,113 +136,190 @@ const httpAdapter = async <R>(
       };
 
       // Response Schema
-      const response: ResponseInterface<R> = {
-        data: await res[methodConfig.responseType](),
+      const response: Partial<ResponseInterface<R>> = {
         headers: retrieveHeaders(),
         status: res.status,
         statusText: res.statusText,
         config: requestConfig,
       };
 
+      // Validate and handle responseType
+      if (methodConfig.responseType) {
+        try {
+          response.data = await res[methodConfig.responseType]();
+        } catch (error) {
+          // Handle parsing error for the specified responseType
+          throw new Error(
+            `Unsupported response type "${
+              methodConfig.responseType
+            }" specified in the request. The Content-Type of the response is "${res.headers.get(
+              "Content-Type"
+            )}".`
+          );
+        }
+      } else {
+        // If no responseType is specified, default to "json"
+        response.data = await res.json();
+      }
+
       return response;
     });
 };
 
-const Reqeza: CreateNewInstance = {
+const createHTTPMethods = (config?: Options): RequestMethods => {
+  // All the HTTP request methods.
+  const methods = [
+    "get",
+    "head",
+    "put",
+    "delete",
+    "post",
+    "patch",
+    "options",
+  ] as const;
+
+  const responseTypes = {
+    json: "application/json",
+    text: "text/*",
+    formData: "multipart/form-data",
+    arrayBuffer: "*/*",
+    blob: "*/*",
+  } as const;
+
+  const obj = {};
+  // console.log(config.headers);
   /**
-   * Create new instance for the given configuration.
-   *
-   * @param {Options} config - PREFIX_URL { API: string: URI: string}
-   *
-   * @returns {Methods} - new instance of Http
-   *
-   * @example
-   * const http = Reqeza.create({
-   *  PREFIX_URL: {
-   *    API: "https://api.github.com"
-   *  }
-   * })
+   * Build methods shortcut *Http.get().text()*.
    */
+  methods.forEach((method) => {
+    obj[method] = (
+      path: string,
+      options?: MethodConfig
+    ): RequestMethodsType => {
+      let responseType = "json";
 
-  create(config?: Options): RequestMethods {
-    // All the HTTP request methods.
-    const METHODS = [
-      "get",
-      "head",
-      "put",
-      "delete",
-      "post",
-      "patch",
-      "options",
-    ] as const;
+      // if (typeof options?.auth === "object") {
+      //   // Add Basic Authorization header
+      //   const token = `${options.auth.username}:${options.auth.password}`;
+      //   const encodedToken = Buffer.from(token).toString("base64");
 
-    const responseTypes = {
-      json: "application/json",
-      text: "text/*",
-      formData: "multipart/form-data",
-      arrayBuffer: "*/*",
-      blob: "*/*",
-    } as const;
+      //   Reqeza.setHeaders({
+      //     Authorization: `Basic ${encodedToken}`,
+      //   });
+      // }
 
-    const Reqeza = {
-      setHeaders(newHeader) {
-        for (const key in newHeader) {
-          _caseless.set(key, newHeader[key]);
-        }
-      },
-    };
+      // Response types methods generator.
+      const responseHandlers = {
+        ...Object.assign(
+          {},
+          ...Object.entries(responseTypes).map(([typeName, mimeType]) => ({
+            [typeName]: () => {
+              setHeaders(headers, { accept: mimeType });
+              responseType = typeName;
 
-    if (config?.headers) {
-      Reqeza.setHeaders(config.headers);
-    }
-
-    /**
-     * Build methods shortcut *Http.get().text()*.
-     */
-    METHODS.forEach((method) => {
-      Reqeza[method] = (
-        path: string,
-        options?: MethodConfig
-      ): RequestMethodsType => {
-        let responseType = "json";
-
-          Reqeza.setHeaders({
-          });
-        }
-
-        // Response types methods generator.
-        const responseHandlers = {
-          ...Object.assign(
-            {},
-            ...Object.entries(responseTypes).map(([typeName, mimeType]) => ({
-              [typeName]: () => {
-                Reqeza.setHeaders({
-                  accept: mimeType,
-                });
-
-                responseType = typeName;
-
-                return responseHandlers;
-              },
-            }))
-          ),
-          // https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
-          then(callback) {
-            httpAdapter(config, method, {
-              path,
-              responseType,
-              ...options,
-            }).then(callback);
-          },
-        };
-
-        return responseHandlers;
+              return responseHandlers;
+            },
+          }))
+        ),
+        // https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
+        then(callback) {
+          httpAdapter(config, method, {
+            path,
+            responseType,
+            ...options,
+          }).then(callback);
+        },
       };
-    });
 
-    return Reqeza as RequestMethods;
-  },
+      return responseHandlers;
+    };
+  });
+
+  return obj as RequestMethods;
+};
+
+/**
+ * Create new instance for the given configuration.
+ *
+ * @param {ServiceConfig} config
+ *
+ * @returns {Methods} - new instance of Http
+ *
+ * @example
+ * const http = Reqeza.create({
+ *    github: {
+ *      url: "https://api.github.com",
+ *      headers: {
+ *        "x-API-KEY": "[GITHUB_TOKEN]"
+ *      }
+ *    },
+ *    gitlab: {
+ *      url: "https://gitlab.com/api/v4/",
+ *      headers: {}
+ *    },
+ * })
+ *
+ * await http.{github}.get('/search/repositories').json()
+ */
+const create = <T extends ServiceConfig>(
+  config?: T
+): XOR<ServiceReqMethods<T>, RequestMethods> => {
+  const instances = Object.fromEntries(
+    Object.entries(config || { default: {} }).map(
+      ([service, serviceConfig]) => [
+        service,
+        {
+          ...createHTTPMethods(serviceConfig),
+          setHeaders: (newHeaders) =>
+            setHeaders(
+              (serviceConfig.headers = serviceConfig.headers || {}),
+              newHeaders
+            ),
+        },
+      ]
+    )
+  );
+
+  const returnedInstance = isEmpty(config)
+    ? { ...instances.default }
+    : {
+        ...instances,
+        ...instances[Object.keys(instances)[0]],
+        setHeaders: (newHeaders) => setHeaders(headers, newHeaders),
+      };
+
+  return returnedInstance as XOR<ServiceReqMethods<T>, RequestMethods>;
 };
 
 // Merge request methods with Reqeza Object.
-export default { ...Reqeza, ...Reqeza.create() };
+export default { create };
+
+/**
+ * const http = Reqeza.create({
+ *    github: {
+ *      url: "https://api.github.com",
+ *      headers: {
+ *        "x-API-KEY": "[TOKEN]"
+ *      }
+ *    },
+ *    gitlab: {
+ *      url: "https://gitlab.com/api/v4/",
+ *      headers: {}
+ *    },
+ * })
+ *
+ * http.{gitlab}.setHeaders({ "authorization": `Bearer ${token}` })
+ * http.setHeaders({ "authorization": `Bearer ${token}` })
+ *
+ * Set Headers to a specific prefix
+ * http.{gitlab}.beforeRequest(request) {
+ * }
+ *
+ * Set Headers globally
+ * http.beforeRequest(request) {
+ *   request.headers.set("Content-type", "application/json")
+ * }
+ *
+ * await http.get('https://api.github.com/search/repositories', { headers: {} }).json()
+ * await http.github.get('/search/repositories').json()
+ */
