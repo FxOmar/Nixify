@@ -1,8 +1,19 @@
+type HttpMethod = "get" | "head" | "put" | "delete" | "post" | "patch" | "options";
+type ResponseTypes = {
+    json: "application/json";
+    text: "text/*";
+    formData: "multipart/form-data";
+    arrayBuffer: "*/*";
+    blob: "*/*";
+};
 type XOR<T, U> = T | U extends object ? (T & Record<string, never>) | (U & Record<string, never>) : T | U;
 interface Options {
     url: string;
     headers?: {
         [key: string]: string;
+    };
+    hooks?: {
+        beforeRequest: (request: Request) => void;
     };
     qs?: StringifyOptions;
 }
@@ -21,6 +32,7 @@ interface RequestMethods {
     post: RequestMethodsType;
     patch: RequestMethodsType;
     options: RequestMethodsType;
+    beforeRequest: (fn: (request: Request) => void) => void;
     setHeaders: (newHeaders: {
         [key: string]: string;
     }) => void;
@@ -58,6 +70,11 @@ interface MethodConfig extends Omit<RequestInit, "method"> {
     };
 }
 type queryType = string | URLSearchParams | Record<string, string> | string[][];
+interface NormalizedOptions extends RequestInit {
+    method: NonNullable<RequestInit["method"]>;
+    credentials: NonNullable<RequestInit["credentials"]>;
+    PREFIX_URL: string;
+}
 type StringifyOptions = {
     /**
     Strictly encode URI components with [`strict-uri-encode`](https://github.com/kevva/strict-uri-encode). It uses [`encodeURIComponent`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent) if set to `false`. You probably [don't care](https://github.com/sindresorhus/query-string/issues/42) about this option.
@@ -245,9 +262,9 @@ type StringifyOptions = {
     */
     readonly skipEmptyString?: boolean;
 };
+/**
+Stringify an object into a query string and sort the keys.
+*/
+type Stringify = (object: Record<string, any>, options?: StringifyOptions) => string;
 
-declare const _default: {
-    create: <T extends ServiceConfig>(config?: T) => XOR<ServiceReqMethods<T>, RequestMethods>;
-};
-
-export { _default as default };
+export type { HttpMethod, MethodConfig, NormalizedOptions, Options, RequestMethods, RequestMethodsType, ResponseHandlers, ResponseInterface, ResponseTypes, ServiceConfig, ServiceReqMethods, Stringify, StringifyOptions, XOR, queryType };

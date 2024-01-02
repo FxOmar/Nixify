@@ -1,13 +1,5 @@
-export { HTTPError, ResponseError } from "./errors"
-
-export { qs } from "./qs"
-
 export function isEmpty(target) {
 	return target === null || target === undefined || Object.keys(target).length === 0
-}
-
-export function has(target: object, key: string): boolean {
-	return isEmpty(target) ? false : Object.hasOwnProperty.call(target, key)
 }
 
 export function mergeHeaders(baseHeaders: Headers, additionalHeaders: HeadersInit): Headers {

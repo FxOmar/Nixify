@@ -15,7 +15,7 @@ export type XOR<T, U> = T | U extends object
 export interface Options {
 	url: string
 	headers?: { [key: string]: string }
-	//   hooks?: { beforeRequest: (request: Request) => void };
+	hooks?: { beforeRequest: (request: Request) => void }
 	qs?: StringifyOptions
 }
 
@@ -38,6 +38,7 @@ export interface RequestMethods {
 	post: RequestMethodsType
 	patch: RequestMethodsType
 	options: RequestMethodsType
+	beforeRequest: (fn: (request: Request) => void) => void
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	setHeaders: (newHeaders: { [key: string]: string }) => void
 }
@@ -45,8 +46,6 @@ export interface RequestMethods {
 export type ServiceReqMethods<T extends ServiceConfig> = {
 	[K in keyof T]: RequestMethods
 }
-
-// export interface CreateReturnValue extends ServiceReqMethods, RequestMethods {}
 
 export interface ResponseInterface<T> {
 	data: T

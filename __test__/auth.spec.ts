@@ -1,6 +1,6 @@
 require("isomorphic-fetch")
 import Reqeza from "../src/index"
-import { startServer } from "../src/utils/testing-server"
+import { startServer } from "./testing-server"
 
 const BASE_URL = "http://localhost:3001"
 

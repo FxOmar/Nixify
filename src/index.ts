@@ -8,7 +8,9 @@ import type {
 	ServiceReqMethods,
 	XOR,
 } from "./interfaces"
-import { ResponseError, has, qs, mergeHeaders, isEmpty, setHeaders } from "./utils"
+import { mergeHeaders, isEmpty, setHeaders } from "./utils"
+import { ResponseError } from "./utils/errors"
+import { qs } from "./utils/qs"
 
 const headers = {} // Initial headers
 
@@ -30,7 +32,7 @@ const __configuration = (
 
 	// https://felixgerschau.com/js-manipulate-url-search-params/
 	// Add queries to the url
-	has(methodConfig, "qs") ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs)) : null
+	methodConfig?.qs ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs)) : null
 
 	let headersConfig = new Headers({
 		...headers,
@@ -40,7 +42,7 @@ const __configuration = (
 	/**
 	 * if body is json, then set headers to content-type JSON
 	 */
-	if (has(methodConfig, "json")) {
+	if (methodConfig?.json) {
 		methodConfig.body = JSON.stringify(methodConfig.json)
 		headersConfig.append("Content-Type", "application/json; charset=UTF-8")
 		delete methodConfig.json
@@ -88,6 +90,10 @@ const httpAdapter = async <R>(
 	methodConfig: MethodConfig,
 ) => {
 	const requestConfig = __configuration(config, methodConfig, method)
+
+	if (config?.hooks) {
+		await config.hooks.beforeRequest(requestConfig)
+	}
 
 	return fetch(requestConfig)
 		.then((res) => ResponseError(res, requestConfig, config))
@@ -159,15 +165,15 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 		httpShortcuts[method] = (path: string, options?: MethodConfig): RequestMethodsType => {
 			let responseType = "json"
 
-			// if (typeof options?.auth === "object") {
-			//   // Add Basic Authorization header
-			//   const token = `${options.auth.username}:${options.auth.password}`;
-			//   const encodedToken = Buffer.from(token).toString("base64");
+			if (typeof options?.auth === "object") {
+				// Add Basic Authorization header
+				const token = `${options.auth.username}:${options.auth.password}`
+				const encodedToken = Buffer.from(token).toString("base64")
 
-			//   Reqeza.setHeaders({
-			//     Authorization: `Basic ${encodedToken}`,
-			//   });
-			// }
+				setHeaders(config?.headers, {
+					Authorization: `Basic ${encodedToken}`,
+				})
+			}
 
 			// Response types methods generator.
 			const responseHandlers = {
@@ -205,11 +211,9 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
  * @function create
  * @param {Object} [config=null] - Configuration object for defining service instances with their respective URLs and headers.
  * @returns {Object} An HTTP client with service instances and utility functions.
- * @property {Function} setHeaders - Sets headers globally for all service instances.
  * @property {Object} {service} - Individual service instance with methods for making HTTP requests.
  * @property {Function} {service}.setHeaders - Sets headers for a specific service instance.
- * @property {Function} beforeRequest - Global hook to set headers before making HTTP requests.
- * @property {Function} {service}.beforeRequest - Service-specific hook to set headers before making HTTP requests for a specific service.
+ * @property {Function} {service}.beforeRequest - Service-specific hook to edit request before making HTTP requests for a specific service.
  *
  * @example
  * const http = Reqeza.create({
@@ -228,21 +232,11 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
  * // Set headers for a specific service instance
  * http.gitlab.setHeaders({ "authorization": `Bearer ${token}` });
  *
- * // Set headers globally
- * http.setHeaders({ "authorization": `Bearer ${token}` });
- *
  * // Set headers before making a request for a specific service instance
  * http.gitlab.beforeRequest(request => {
  *   // Modify request headers or perform other actions
  * });
  *
- * // Set headers globally before making a request
- * http.beforeRequest(request => {
- *   request.headers.set("Content-type", "application/json");
- * });
- *
- * // Make HTTP requests
- * await http.get('https://api.github.com/search/repositories', { headers: {} }).json();
  * await http.github.get('/search/repositories').json();
  */
 const create = <T extends ServiceConfig>(config?: T): XOR<ServiceReqMethods<T>, RequestMethods> => {
@@ -251,6 +245,16 @@ const create = <T extends ServiceConfig>(config?: T): XOR<ServiceReqMethods<T>, 
 			service,
 			{
 				...createHTTPMethods(serviceConfig),
+				beforeRequest: (callback) => {
+					if (serviceConfig?.hooks?.beforeRequest) {
+						throw new TypeError(
+							"beforeRequest has already been invoked within configuration.",
+						)
+					}
+
+					serviceConfig.hooks = {}
+					serviceConfig.hooks.beforeRequest = callback
+				},
 				setHeaders: (newHeaders) =>
 					setHeaders((serviceConfig.headers = serviceConfig.headers || {}), newHeaders),
 			},
@@ -268,5 +272,4 @@ const create = <T extends ServiceConfig>(config?: T): XOR<ServiceReqMethods<T>, 
 	return resultingInstances as XOR<ServiceReqMethods<T>, RequestMethods>
 }
 
-// Merge request methods with Reqeza Object.
 export default { create }
