@@ -1,12 +1,12 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsup"
 
 export default defineConfig({
-  entry: ["./src/index.ts"],
-  outDir: "@Reqeza",
-  clean: true,
-  format: "esm",
-  platform: "browser",
-  target: ["chrome58", "firefox57", "safari11", "edge16"],
-  minify: true,
-  dts: true,
-});
+	entry: ["./src/index.ts"],
+	outDir: "@Reqeza",
+	clean: true,
+	format: "esm",
+	platform: "browser",
+	target: "es2015",
+	minify: true,
+	dts: true,
+})
