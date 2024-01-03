@@ -64,7 +64,6 @@ export interface ResponseHandlers<T> {
 
 export interface MethodConfig extends Omit<RequestInit, "method"> {
 	path?: string
-	PREFIX_URL?: string
 	qs?: { [name: string]: queryType | number } // Object of queries.
 	json?: object
 	responseType?: string
@@ -74,15 +73,11 @@ export interface MethodConfig extends Omit<RequestInit, "method"> {
 
 export type queryType = string | URLSearchParams | Record<string, string> | string[][]
 
-export interface NormalizedOptions extends RequestInit {
+export interface NormalizedOptions extends RequestInit, Omit<Options, "headers"> {
 	// eslint-disable-line @typescript-eslint/consistent-type-definitions
 	// Extended from `RequestInit`, but ensured to be set (not optional).
 	method: NonNullable<RequestInit["method"]>
 	credentials: NonNullable<RequestInit["credentials"]>
-
-	// Extended from custom `Options`, but ensured to be set (not optional).
-	// retry: RetryOptions;
-	PREFIX_URL: string
 }
 
 export type StringifyOptions = {

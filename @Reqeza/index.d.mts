@@ -1,4 +1,4 @@
-import { ServiceConfig, XOR, ServiceReqMethods, RequestMethods } from './interfaces.js';
+import { ServiceConfig, XOR, ServiceReqMethods, RequestMethods } from './types/index.mjs';
 
 declare const _default: {
     create: <T extends ServiceConfig>(config?: T) => XOR<ServiceReqMethods<T>, RequestMethods>;

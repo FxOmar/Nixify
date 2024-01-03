@@ -1,4 +1,4 @@
-import { Stringify } from '../interfaces.js';
+import { Stringify } from '../types/index.mjs';
 
 /**
  * https://github.com/sindresorhus/query-string/blob/main/base.js

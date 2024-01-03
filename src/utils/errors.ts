@@ -2,7 +2,7 @@
  *  Code source.
  *  https://github.com/sindresorhus/ky/blob/main/source/errors/HTTPError.ts
  */
-import { NormalizedOptions } from "../interfaces"
+import { NormalizedOptions } from "../types"
 
 export class HTTPError extends Error {
 	public response: Response

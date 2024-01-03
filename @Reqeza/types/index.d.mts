@@ -42,9 +42,7 @@ type ServiceReqMethods<T extends ServiceConfig> = {
 };
 interface ResponseInterface<T> {
     data: T;
-    headers: {
-        [key: string]: string;
-    };
+    headers: Headers;
     status: number;
     statusText: string;
     config: Request;
@@ -58,7 +56,6 @@ interface ResponseHandlers<T> {
 }
 interface MethodConfig extends Omit<RequestInit, "method"> {
     path?: string;
-    PREFIX_URL?: string;
     qs?: {
         [name: string]: queryType | number;
     };
@@ -70,10 +67,9 @@ interface MethodConfig extends Omit<RequestInit, "method"> {
     };
 }
 type queryType = string | URLSearchParams | Record<string, string> | string[][];
-interface NormalizedOptions extends RequestInit {
+interface NormalizedOptions extends RequestInit, Omit<Options, "headers"> {
     method: NonNullable<RequestInit["method"]>;
     credentials: NonNullable<RequestInit["credentials"]>;
-    PREFIX_URL: string;
 }
 type StringifyOptions = {
     /**

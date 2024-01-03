@@ -1,4 +1,4 @@
-import { NormalizedOptions } from '../interfaces.js';
+import { NormalizedOptions } from '../types/index.mjs';
 
 /**
  *  Code source.

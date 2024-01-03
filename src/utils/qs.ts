@@ -1,7 +1,7 @@
 /**
  * https://github.com/sindresorhus/query-string/blob/main/base.js
  */
-import { Stringify } from "../interfaces"
+import { Stringify } from "../types"
 
 const isNullOrUndefined = (value) => value === null || value === undefined
 

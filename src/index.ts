@@ -7,7 +7,7 @@ import type {
 	ServiceConfig,
 	ServiceReqMethods,
 	XOR,
-} from "./interfaces"
+} from "./types"
 import { mergeHeaders, isEmpty, setHeaders } from "./utils"
 import { ResponseError } from "./utils/errors"
 import { qs } from "./utils/qs"
