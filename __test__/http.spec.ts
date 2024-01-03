@@ -93,12 +93,9 @@ describe("HTTP functionalities", () => {
 
 		http3.setHeaders(headers)
 
-		// const { status, config } = await http3.local.get("/book").json()
 		const { config: opt } = await http3.local2.get("/book").json()
 
-		// expect(status).toBe(200)
-		// expect(headers.Authorization).toBe(config.headers.get("Authorization"))
-		expect(headers.Authorization).toBe(opt.headers.get("Authorization"))
+		expect(opt.headers.get("Authorization")).toBe(headers.Authorization)
 	})
 
 	it("Should set header using function helper setHeader", async () => {
@@ -125,6 +122,18 @@ describe("HTTP functionalities", () => {
 					"Custom-Header": "customValue",
 				},
 			},
+			local: {
+				url: BASE_URL,
+				headers: {
+					"Custom-Header": "customValue",
+				},
+			},
+		})
+
+		const http = Reqeza.create({
+			PREFIX_URL: {
+				url: BASE_URL,
+			},
 		})
 
 		const header = { "Cache-Control": "max-age=604800" }
@@ -135,17 +144,26 @@ describe("HTTP functionalities", () => {
 		const { config } = await http2.get("/book").json()
 		const {
 			config: { headers },
-		} = await http2.get("/book", { headers: customHeader }).json()
+		} = await http2.local.get("/book", { headers: customHeader }).json()
+
+		const {
+			config: { headers: headersA },
+		} = await http.get("/book").json()
 
 		const expectedHeaders = expect.objectContaining(config.headers)
 
 		expect(config.headers.get("Cache-Control")).toBe(header["Cache-Control"])
 		expect(config.headers.get("Date")).toBeNull()
 		expect(config.headers.get("Custom-Header")).toBe("customValue")
+		expect(headers.get("Date")).toBe(customHeader.Date)
 
 		// Check if it have global headers
 		expect(headers).toEqual(expectedHeaders)
-		expect(headers.get("Date")).toBe(customHeader.Date)
+		expect([
+			headers.get("Cache-Control"),
+			config.headers.get("Cache-Control"),
+			headersA.get("Cache-Control"),
+		]).toEqual(["max-age=604800", "max-age=604800", null])
 	})
 
 	it("Intercepting requests by invoking `beforeRequest` should be ensured.", async () => {
@@ -164,17 +182,17 @@ describe("HTTP functionalities", () => {
 
 		const { config } = await http2.local.get("/book").json()
 
-		expect("[GITHUB_TOKEN]").toBe(config.headers.get("X-API-KEY"))
+		expect(config.headers.get("X-API-KEY")).toBe("[GITHUB_TOKEN]")
 	})
 
 	it("Should Set headers if no services are provided.", async () => {
 		const headers = { "X-API-KEY": "[LOCAL_TOKEN]" }
 
-		const http2 = Reqeza.create()
+		const http = Reqeza.create()
 
 		http.setHeaders(headers)
 
-		const { status, config } = await http2.get(`${BASE_URL}/book`)
+		const { status, config } = await http.get(`${BASE_URL}/book`)
 
 		expect(status).toBe(200)
 		expect(config.headers.get("X-API-KEY")).toBe(headers["X-API-KEY"])

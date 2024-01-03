@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: true })) // Use body-parser middleware to
 
 app.route("/book")
 	.get((req, res) => {
+		res.set("Set-Cookie", "name1=value1")
 		if (req.query.name) {
 			res.json({ message: req.query.name })
 			return

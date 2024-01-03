@@ -49,7 +49,7 @@ export type ServiceReqMethods<T extends ServiceConfig> = {
 
 export interface ResponseInterface<T> {
 	data: T
-	headers: { [key: string]: string }
+	headers: Headers
 	status: number
 	statusText: string
 	config: Request

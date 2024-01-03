@@ -12,8 +12,6 @@ import { mergeHeaders, isEmpty, setHeaders } from "./utils"
 import { ResponseError } from "./utils/errors"
 import { qs } from "./utils/qs"
 
-const headers = {} // Initial headers
-
 const __configuration = (
 	config: Options,
 	methodConfig: MethodConfig,
@@ -35,7 +33,6 @@ const __configuration = (
 	methodConfig?.qs ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs)) : null
 
 	let headersConfig = new Headers({
-		...headers,
 		...config?.headers,
 	})
 
@@ -98,24 +95,9 @@ const httpAdapter = async <R>(
 	return fetch(requestConfig)
 		.then((res) => ResponseError(res, requestConfig, config))
 		.then(async (res) => {
-			/**
-			 * Retrieve response Header.
-			 *
-			 * @param headers
-			 * @returns Response Headers
-			 */
-			const retrieveHeaders = () => {
-				const headers = {}
-				for (const pair of res.headers.entries()) {
-					headers[pair[0]] = pair[1]
-				}
-
-				return headers
-			}
-
 			// Response Schema
 			const response: Partial<ResponseInterface<R>> = {
-				headers: retrieveHeaders(),
+				headers: res.headers,
 				status: res.status,
 				statusText: res.statusText,
 				config: requestConfig,
@@ -181,7 +163,9 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 					{},
 					...Object.entries(responseTypes).map(([typeName, mimeType]) => ({
 						[typeName]: () => {
-							setHeaders(headers, { accept: mimeType })
+							setHeaders((config.headers = config?.headers || {}), {
+								accept: mimeType,
+							})
 							responseType = typeName
 
 							return responseHandlers
@@ -261,12 +245,18 @@ const create = <T extends ServiceConfig>(config?: T): XOR<ServiceReqMethods<T>, 
 		]),
 	)
 
+	const updateHeadersAcrossInstances = (newHeaders) => {
+		Object.keys(instances).forEach((key) => {
+			instances[key].setHeaders(newHeaders)
+		})
+	}
+
 	const resultingInstances = isEmpty(config)
 		? { ...instances.default }
 		: {
 				...instances,
 				...instances[Object.keys(instances)[0]],
-				setHeaders: (newHeaders) => setHeaders(headers, newHeaders),
+				setHeaders: (newHeaders) => updateHeadersAcrossInstances(newHeaders),
 			}
 
 	return resultingInstances as XOR<ServiceReqMethods<T>, RequestMethods>
