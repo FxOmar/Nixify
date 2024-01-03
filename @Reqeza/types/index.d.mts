@@ -24,6 +24,13 @@ interface Thenable<U> extends ResponseHandlers<U> {
     then<TResult1 = ResponseHandlers<U>, TResult2 = never>(callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>): Promise<TResult1 | TResult2>;
 }
 type RequestMethodsType = <U = any>(path: string, options?: MethodConfig) => Thenable<U>;
+interface ResponseHandlers<T> {
+    json: () => ResponseInterface<T>;
+    text: () => ResponseInterface<string>;
+    blob: () => ResponseInterface<Blob>;
+    arrayBuffer: () => ResponseInterface<ArrayBuffer>;
+    formData: () => ResponseInterface<FormData>;
+}
 interface RequestMethods {
     get: RequestMethodsType;
     head: RequestMethodsType;
@@ -46,13 +53,6 @@ interface ResponseInterface<T> {
     status: number;
     statusText: string;
     config: Request;
-}
-interface ResponseHandlers<T> {
-    json: () => ResponseInterface<T>;
-    text: () => ResponseInterface<string>;
-    blob: () => ResponseInterface<Blob>;
-    arrayBuffer: () => ResponseInterface<ArrayBuffer>;
-    formData: () => ResponseInterface<FormData>;
 }
 interface MethodConfig extends Omit<RequestInit, "method"> {
     path?: string;

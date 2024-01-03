@@ -2,7 +2,6 @@ import type {
 	MethodConfig,
 	Options,
 	RequestMethods,
-	RequestMethodsType,
 	ResponseInterface,
 	ServiceConfig,
 	ServiceReqMethods,
@@ -65,6 +64,7 @@ const __configuration = (
 
 		// Cancel request
 		signal: methodConfig.signal,
+
 		cache: methodConfig.cache,
 		credentials: methodConfig.credentials,
 		integrity: methodConfig.integrity,
@@ -144,41 +144,30 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 	 * Build methods shortcut *Http.get().text()*.
 	 */
 	methods.forEach((method) => {
-		httpShortcuts[method] = (path: string, options?: MethodConfig): RequestMethodsType => {
+		httpShortcuts[method] = (path: string, options?: MethodConfig) => {
 			let responseType = "json"
 
-			if (typeof options?.auth === "object") {
-				// Add Basic Authorization header
-				const token = `${options.auth.username}:${options.auth.password}`
-				const encodedToken = Buffer.from(token).toString("base64")
-
-				setHeaders(config?.headers, {
-					Authorization: `Basic ${encodedToken}`,
-				})
+			if (options?.auth && typeof options?.auth === "object") {
+				const { username, password } = options.auth
+				const encodedToken = Buffer.from(`${username}:${password}`).toString("base64")
+				setHeaders(config?.headers, { Authorization: `Basic ${encodedToken}` })
 			}
 
-			// Response types methods generator.
 			const responseHandlers = {
-				...Object.assign(
-					{},
-					...Object.entries(responseTypes).map(([typeName, mimeType]) => ({
-						[typeName]: () => {
+				...Object.fromEntries(
+					Object.entries(responseTypes).map(([typeName, mimeType]) => [
+						typeName,
+						() => {
 							setHeaders((config.headers = config?.headers || {}), {
 								accept: mimeType,
 							})
 							responseType = typeName
-
 							return responseHandlers
 						},
-					})),
+					]),
 				),
-				// https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
 				then(callback) {
-					httpAdapter(config, method, {
-						path,
-						responseType,
-						...options,
-					}).then(callback)
+					httpAdapter(config, method, { path, responseType, ...options }).then(callback)
 				},
 			}
 

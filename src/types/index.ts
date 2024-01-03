@@ -30,6 +30,14 @@ interface Thenable<U> extends ResponseHandlers<U> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RequestMethodsType = <U = any>(path: string, options?: MethodConfig) => Thenable<U>
 
+export interface ResponseHandlers<T> {
+	json: () => ResponseInterface<T>
+	text: () => ResponseInterface<string>
+	blob: () => ResponseInterface<Blob>
+	arrayBuffer: () => ResponseInterface<ArrayBuffer>
+	formData: () => ResponseInterface<FormData>
+}
+
 export interface RequestMethods {
 	get: RequestMethodsType
 	head: RequestMethodsType
@@ -53,13 +61,6 @@ export interface ResponseInterface<T> {
 	status: number
 	statusText: string
 	config: Request
-}
-export interface ResponseHandlers<T> {
-	json: () => ResponseInterface<T>
-	text: () => ResponseInterface<string>
-	blob: () => ResponseInterface<Blob>
-	arrayBuffer: () => ResponseInterface<ArrayBuffer>
-	formData: () => ResponseInterface<FormData>
 }
 
 export interface MethodConfig extends Omit<RequestInit, "method"> {

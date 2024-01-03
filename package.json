@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsup",
     "test": "jest",
-    "test:watch": "jest --watch --no-cache --runInBand --verbose",
+    "test:watch": "jest --watch --cache --runInBand --verbose",
     "test:coverage": "jest --coverage"
   },
   "repository": {
