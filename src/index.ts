@@ -215,9 +215,13 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
  *   // Modify request headers or perform other actions
  * });
  *
+ * http.beforeRequest(request => {
+ *   // Modify request headers or perform other actions
+ * });
+ *
  * await http.github.get('/search/repositories').json();
  */
-const create = <T extends ServiceConfig>(config?: T): XOR<ServiceReqMethods<T>, RequestMethods> => {
+const create = <T extends ServiceConfig>(config?: T) => {
 	const instances = Object.fromEntries(
 		Object.entries(config || { default: {} }).map(([service, serviceConfig]) => [
 			service,
@@ -239,17 +243,20 @@ const create = <T extends ServiceConfig>(config?: T): XOR<ServiceReqMethods<T>, 
 		]),
 	)
 
-	const updateHeadersAcrossInstances = (newHeaders) => {
-		Object.keys(instances).forEach((key) => {
-			instances[key].setHeaders(newHeaders)
-		})
-	}
+	const forEachInstance = (arg) => Object.values(instances).forEach(arg)
+
+	const updateHeadersAcrossInstances = (newHeaders) =>
+		forEachInstance((instance) => instance.setHeaders(newHeaders))
+
+	const beforeRequestAcrossInstances = (fn) =>
+		forEachInstance((instance) => instance.beforeRequest(fn))
 
 	const resultingInstances = isEmpty(config)
 		? { ...instances.default }
 		: {
 				...instances,
 				...instances[Object.keys(instances)[0]],
+				beforeRequest: (fn) => beforeRequestAcrossInstances(fn),
 				setHeaders: (newHeaders) => updateHeadersAcrossInstances(newHeaders),
 			}
 
