@@ -88,42 +88,47 @@ const httpAdapter = async <R>(
 ) => {
 	const requestConfig = __configuration(config, methodConfig, method)
 
-	if (config?.hooks) {
-		await config.hooks.beforeRequest(requestConfig)
-	}
+	return new Promise((resolve, reject) => {
+		if (config?.hooks) {
+			config.hooks.beforeRequest(requestConfig)
+		}
 
-	return fetch(requestConfig)
-		.then((res) => ResponseError(res, requestConfig, config))
-		.then(async (res) => {
-			// Response Schema
-			const response: Partial<ResponseInterface<R>> = {
-				headers: res.headers,
-				status: res.status,
-				statusText: res.statusText,
-				config: requestConfig,
-			}
-
-			// Validate and handle responseType
-			if (methodConfig.responseType) {
-				try {
-					response.data = await res[methodConfig.responseType]()
-				} catch (error) {
-					// Handle parsing error for the specified responseType
-					throw new Error(
-						`Unsupported response type "${
-							methodConfig.responseType
-						}" specified in the request. The Content-Type of the response is "${res.headers.get(
-							"Content-Type",
-						)}".`,
-					)
+		fetch(requestConfig)
+			.then((res) => ResponseError(res, requestConfig, config))
+			.then(async (res) => {
+				// Response Schema
+				const response: Partial<ResponseInterface<R>> = {
+					headers: res.headers,
+					status: res.status,
+					statusText: res.statusText,
+					config: requestConfig,
 				}
-			} else {
-				// If no responseType is specified, default to "json"
-				response.data = await res.json()
-			}
 
-			return response
-		})
+				// Validate and handle responseType
+				if (methodConfig.responseType) {
+					try {
+						response.data = await res[methodConfig.responseType]()
+					} catch (error) {
+						// Handle parsing error for the specified responseType
+						throw new Error(
+							`Unsupported response type "${
+								methodConfig.responseType
+							}" specified in the request. The Content-Type of the response is "${res.headers.get(
+								"Content-Type",
+							)}".`,
+						)
+					}
+				} else {
+					// If no responseType is specified, default to "json"
+					response.data = await res.json()
+				}
+
+				resolve(response)
+			})
+			.catch((error) => {
+				reject(error) // Reject the promise with the error
+			})
+	})
 }
 
 const createHTTPMethods = (config?: Options): RequestMethods => {
