@@ -216,12 +216,27 @@ interface Options {
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#options
 interface MethodConfig extends Omit<RequestInit, "method"> {
-  path?: string
-  qs?: { [name: string]: queryType | number } // Object of queries.
-  json?: object
-  responseType?: string
+  // URL parameters to be sent with the request
+  // (e.g http.get(path, { qs: { name: "Joe" } }) = path?name=Joe )
+  qs?: { [name: string]: string | URLSearchParams | Record<string, string> | string[][] }
+  // `headers` are custom headers to be sent.
+  headers?: Object;
+  // `json` to send body as Content-Type JSON.
+  json?: Object;
+  //  `body` to send data under one of these types -
+  body?:
+    | Blob
+    | BufferSource
+    | FormData
+    | URLSearchParams
+    | USVString
+    | ReadableStream;
+  // `responseType` indicates the type of data that the server will respond with.
+  responseType?: "json" | "text" | "blob" | "arrayBuffer" | "formData";
   //   hooks?: { beforeRequest: (request: Request) => void };
   auth?: { username: string; password: string }
+  // To cancel request using AbortController
+  signal?: AbortController;
 }
 ```
 
