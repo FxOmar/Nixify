@@ -19,8 +19,8 @@ describe("HTTP functionalities", () => {
 		})
 	})
 
-	afterAll(() => {
-		server.close()
+	afterAll(async () => {
+		await server.close()
 	})
 
 	it("Should fetch data from API.", async () => {

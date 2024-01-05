@@ -21,8 +21,8 @@ describe("API AUTH", () => {
 		})
 	})
 
-	afterAll(() => {
-		server.close()
+	afterAll(async () => {
+		await server.close()
 	})
 
 	it("Should login /auth/login and return JWT tokens", async () => {
