@@ -80,10 +80,15 @@ http.beforeRequest((request, config) => {
   request.headers.set("Content-type", "application/json");
 });
 
-// Make HTTP requests
+// TypeScript Version
+interface Repositories {}
+const { data } = await http.gitlab.get<Repositories>("/search/repositories").json();
+
+// Javascript Version
 const { data, config } = await http
   .get("https://api.github.com/search/repositories", { headers: {} })
   .json();
+
 const { data, status } = await http.github.get("/search/repositories").json();
 
 /**
@@ -182,7 +187,7 @@ http.setHeaders({ Authorization: `Bearer ${token}` });
 
 ```typescript
 // We provided supported for all request methods.
-http.get(url | path, options?) // Returns an Object of callable type-setters methods.
+http.get<T>(url | path, options?) // Returns an Object of callable type-setters methods.
 // instead of `responseType`.
   json() // By default
   text()
