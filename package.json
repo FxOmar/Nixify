@@ -1,6 +1,6 @@
 {
   "name": "reqeza",
-  "version": "2.2.7",
+  "version": "3.0.0",
   "description": "Tiny JavaScript HTTP client based on browser Fetch API.",
   "module": "@Reqeza/index.mjs",
   "types": "@Reqeza/index.d.mts",
