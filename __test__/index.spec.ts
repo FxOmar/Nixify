@@ -23,7 +23,7 @@ describe("Creating new instance of http.", () => {
 
 		METHODS.forEach((prop) => {
 			expect(typeof http.local[prop]).toBe("function")
-			expect(http).toHaveProperty(prop) // expect to have all the methods default local config.
+			expect(http.local).toHaveProperty(prop) // expect to have all the methods default local config.
 		})
 	})
 

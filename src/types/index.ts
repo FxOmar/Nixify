@@ -15,7 +15,7 @@ export type XOR<T, U> = T | U extends object
 export interface Options {
 	url: string
 	headers?: { [key: string]: string }
-	hooks?: { beforeRequest: (request: Request) => void }
+	hooks?: { beforeRequest: (request: Request, config: Options) => void }
 	qs?: StringifyOptions
 }
 
@@ -46,7 +46,7 @@ export interface RequestMethods {
 	post: RequestMethodsType
 	patch: RequestMethodsType
 	options: RequestMethodsType
-	beforeRequest: (fn: (request: Request) => void) => void
+	beforeRequest: (fn: (request: Request, config: Options) => void) => void
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	setHeaders: (newHeaders: { [key: string]: string }) => void
 }

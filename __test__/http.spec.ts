@@ -24,7 +24,7 @@ describe("HTTP functionalities", () => {
 	})
 
 	it("Should fetch data from API.", async () => {
-		const { data, status } = await http.get("/text").text()
+		const { data, status } = await http.api.get("/text").text()
 
 		expect(status).toBe(200)
 		expect(data).toBe("Hello, world")
@@ -33,7 +33,7 @@ describe("HTTP functionalities", () => {
 	it("Should send POST request to API.", async () => {
 		const title = "Think and grow rich"
 
-		const { data, status } = await http
+		const { data, status } = await http.api
 			.post("/book", {
 				json: {
 					title,
@@ -51,7 +51,7 @@ describe("HTTP functionalities", () => {
 	})
 
 	it("Should parse response with json by default.", async () => {
-		const { data, status } = await http.get("/book")
+		const { data, status } = await http.api.get("/book")
 
 		expect(status).toBe(200)
 
@@ -116,7 +116,7 @@ describe("HTTP functionalities", () => {
 
 	it("Should Ensure proper merging of method header and global header", async () => {
 		const http2 = Reqeza.create({
-			PREFIX_URL: {
+			api: {
 				url: BASE_URL,
 				headers: {
 					"Custom-Header": "customValue",
@@ -131,7 +131,7 @@ describe("HTTP functionalities", () => {
 		})
 
 		const http = Reqeza.create({
-			PREFIX_URL: {
+			api: {
 				url: BASE_URL,
 			},
 		})
@@ -141,14 +141,14 @@ describe("HTTP functionalities", () => {
 
 		http2.setHeaders(header)
 
-		const { config } = await http2.get("/book").json()
+		const { config } = await http2.api.get("/book").json()
 		const {
 			config: { headers },
 		} = await http2.local.get("/book", { headers: customHeader }).json()
 
 		const {
 			config: { headers: headersA },
-		} = await http.get("/book").json()
+		} = await http.api.get("/book").json()
 
 		const expectedHeaders = expect.objectContaining(config.headers)
 
@@ -172,7 +172,7 @@ describe("HTTP functionalities", () => {
 				url: BASE_URL,
 			},
 			gitlab: {
-				url: "https://gitlab.com/api/v4/",
+				url: BASE_URL,
 			},
 		})
 
@@ -209,7 +209,7 @@ describe("HTTP functionalities", () => {
 
 		const fakeDate = { name: "Rich dad, Poor dad" }
 
-		const { data, config } = await http.get<{ message: string }>("/book", {
+		const { data, config } = await http.api.get<{ message: string }>("/book", {
 			qs: { ...fakeDate, limit: 5 },
 		})
 
@@ -229,7 +229,7 @@ describe("HTTP functionalities", () => {
 
 		const title = "Think and grow rich"
 
-		const { status, config } = await http
+		const { status, config } = await http.api
 			.post("/book", {
 				body: new URLSearchParams({ title }),
 			})
@@ -237,7 +237,7 @@ describe("HTTP functionalities", () => {
 
 		expect(status).toBe(200)
 		expect(config.headers.get("Content-Type")).toBe(
-			"application/x-www-form-urlencoded;charset=utf-8",
+			"application/x-www-form-urlencoded;charset=UTF-8",
 		)
 	})
 })

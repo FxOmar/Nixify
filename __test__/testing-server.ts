@@ -87,7 +87,7 @@ app.get("/auth/profile", (req, res) => {
 
 export function startServer() {
 	return app.listen(config.port, () => {
-		console.log(`Server running at http://${config.hostname}:${config.port}/`)
+		// console.log(`Server running at http://${config.hostname}:${config.port}/`)
 	})
 }
 

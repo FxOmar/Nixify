@@ -44,10 +44,6 @@ const __configuration = (
 		delete methodConfig.json
 	}
 
-	if (methodConfig?.body instanceof URLSearchParams) {
-		headersConfig.append("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
-	}
-
 	if (methodConfig.headers) {
 		headersConfig = mergeHeaders(headersConfig, methodConfig.headers)
 	}
@@ -90,7 +86,7 @@ const httpAdapter = async <R>(
 
 	return new Promise((resolve, reject) => {
 		if (config?.hooks) {
-			config.hooks.beforeRequest(requestConfig)
+			config.hooks.beforeRequest(requestConfig, config)
 		}
 
 		fetch(requestConfig)
