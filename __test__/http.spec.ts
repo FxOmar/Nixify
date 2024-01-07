@@ -1,4 +1,4 @@
-require("isomorphic-fetch")
+// require("isomorphic-fetch")
 import Reqeza from "../src/index"
 
 import { startServer } from "./testing-server"
@@ -20,7 +20,7 @@ describe("HTTP functionalities", () => {
 	})
 
 	afterAll(async () => {
-		await server.close()
+		server.close()
 	})
 
 	it("Should fetch data from API.", async () => {

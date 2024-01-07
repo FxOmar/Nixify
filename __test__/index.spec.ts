@@ -1,13 +1,18 @@
-require("isomorphic-fetch")
-import Reqeza from "../src/index"
+import fetchMock from "jest-fetch-mock"
 
-jest.mock("isomorphic-fetch")
+import Reqeza from "../src/index"
 
 const BASE_URL = "http://localhost:3001"
 
 const METHODS = ["get", "head", "put", "delete", "post", "patch", "options"]
 
 describe("Creating new instance of http.", () => {
+	beforeAll(() => {
+		fetchMock.enableMocks()
+	})
+	beforeEach(() => {
+		fetchMock.resetMocks()
+	})
 	it("Should create new instance with all services and all http methods [http.local.get()].", async () => {
 		const http = Reqeza.create({
 			local: {
@@ -44,5 +49,41 @@ describe("Creating new instance of http.", () => {
 		TYPES_METHODS.forEach(async (prop) => {
 			expect(http.get("/hello")).toHaveProperty(prop)
 		})
+	})
+
+	it("Should have timeout default of 10000.", async () => {
+		const http = Reqeza.create({
+			local: {
+				url: BASE_URL,
+			},
+		})
+
+		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), { status: 200 })
+
+		let defaultTimeout = 0
+
+		http.local.beforeRequest((req, config) => {
+			defaultTimeout = config.timeout as number
+		})
+
+		const { status } = await http.local.get("/book").json()
+
+		expect(status).toBe(200)
+		expect(defaultTimeout).toBe(10000)
+	})
+
+	it("Should cancel request and throw timeout error.", async () => {
+		const http = Reqeza.create({
+			local: {
+				url: BASE_URL,
+				timeout: 100,
+			},
+		})
+
+		fetchMock.mockResponseOnce(
+			() => new Promise((resolve) => setTimeout(() => resolve({ body: "ok" }), 200)),
+		)
+
+		await http.get("/book").text()
 	})
 })

@@ -1,4 +1,4 @@
-require("isomorphic-fetch")
+// require("isomorphic-fetch")
 import Reqeza from "../src/index"
 import { startServer } from "./testing-server"
 
@@ -22,7 +22,7 @@ describe("API AUTH", () => {
 	})
 
 	afterAll(async () => {
-		await server.close()
+		server.close()
 	})
 
 	it("Should login /auth/login and return JWT tokens", async () => {

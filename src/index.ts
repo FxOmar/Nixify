@@ -1,4 +1,5 @@
 import type {
+	HttpMethod,
 	MethodConfig,
 	Options,
 	RequestMethods,
@@ -7,69 +8,50 @@ import type {
 	ServiceReqMethods,
 	XOR,
 } from "./types"
-import { mergeHeaders, isEmpty, setHeaders } from "./utils"
-import { ResponseError } from "./utils/errors"
-import { qs } from "./utils/qs"
+import { isEmpty, setHeaders, mergeConfigs, filterRequestOptions } from "./utils"
+import { NetworkError, ResponseError } from "./utils/errors"
+import timeout from "./utils/timeout"
 
-const __configuration = (
-	config: Options,
-	methodConfig: MethodConfig,
-	method: NonNullable<RequestInit["method"]>,
-): Request => {
-	const BASE_URL = new URL(methodConfig.path, config?.url ?? undefined)
+// All the HTTP request methods.
+const methods = ["get", "head", "put", "delete", "post", "patch", "options"] as const
 
-	if (BASE_URL.protocol !== "https:" && BASE_URL.protocol !== "http:") {
-		throw new TypeError(`Unsupported protocol, ${BASE_URL.protocol}`)
+const responseTypes = {
+	json: "application/json",
+	text: "text/*",
+	formData: "multipart/form-data",
+	arrayBuffer: "*/*",
+	blob: "*/*",
+} as const
+
+const __requestConfig = (config): Request => {
+	if (config.url.protocol !== "https:" && config.url.protocol !== "http:") {
+		throw new TypeError(`Unsupported protocol, ${config.url.protocol}`)
 	}
-
-	if (methodConfig.signal && !(methodConfig.signal instanceof AbortSignal))
-		throw new TypeError(
-			typeof methodConfig.signal + " received for signal, but expected an AbortSignal",
-		)
-
-	// https://felixgerschau.com/js-manipulate-url-search-params/
-	// Add queries to the url
-	methodConfig?.qs ? (BASE_URL.search = qs.stringify(methodConfig.qs, config?.qs)) : null
-
-	let headersConfig = new Headers({
-		...config?.headers,
-	})
 
 	/**
 	 * if body is json, then set headers to content-type JSON
 	 */
-	if (methodConfig?.json) {
-		methodConfig.body = JSON.stringify(methodConfig.json)
-		headersConfig.append("Content-Type", "application/json; charset=UTF-8")
-		delete methodConfig.json
+	if (config?.json) {
+		config.body = JSON.stringify(config.json)
+		config.headers.append("Content-Type", "application/json; charset=UTF-8")
+		delete config.json
 	}
 
-	if (methodConfig.headers) {
-		headersConfig = mergeHeaders(headersConfig, methodConfig.headers)
+	const request = filterRequestOptions(config)
+
+	return new Request(config.url.toString(), request)
+}
+
+const _fetch = async (request: Request, config) => {
+	if (config?.hooks) {
+		config.hooks.beforeRequest(request, config)
 	}
 
-	return new Request(BASE_URL.toString(), {
-		method: method.toLocaleUpperCase(),
-		headers: headersConfig,
-		/*
-		 * Note: The body type can only be a Blob, BufferSource, FormData, URLSearchParams,
-		 * USVString or ReadableStream type,
-		 * so for adding a JSON object to the payload you need to stringify that object.
-		 */
-		body: methodConfig.body,
+	if (config.timeout === false) {
+		return fetch(request.clone())
+	}
 
-		// Cancel request
-		signal: methodConfig.signal,
-
-		cache: methodConfig.cache,
-		credentials: methodConfig.credentials,
-		integrity: methodConfig.integrity,
-		keepalive: methodConfig.keepalive,
-		mode: methodConfig.mode,
-		redirect: methodConfig.redirect,
-		referrer: methodConfig.referrer,
-		referrerPolicy: methodConfig.referrerPolicy,
-	})
+	return timeout(request.clone(), config.abortController, config.timeout)
 }
 
 /**
@@ -77,20 +59,13 @@ const __configuration = (
  *
  * @returns {Promise<ResponseInterface>}
  */
-const httpAdapter = async <R>(
-	config: Options,
-	method: NonNullable<RequestInit["method"]>,
-	methodConfig: MethodConfig,
-) => {
-	const requestConfig = __configuration(config, methodConfig, method)
+const httpAdapter = async <R>(config: Options, method: HttpMethod, methodConfig: MethodConfig) => {
+	const _config = mergeConfigs(config, methodConfig, method)
+	const requestConfig = __requestConfig(_config)
 
 	return new Promise((resolve, reject) => {
-		if (config?.hooks) {
-			config.hooks.beforeRequest(requestConfig, config)
-		}
-
-		fetch(requestConfig)
-			.then((res) => ResponseError(res, requestConfig, config))
+		_fetch(requestConfig, _config)
+			.then((res) => ResponseError(res, requestConfig, _config))
 			.then(async (res) => {
 				// Response Schema
 				const response: Partial<ResponseInterface<R>> = {
@@ -101,14 +76,14 @@ const httpAdapter = async <R>(
 				}
 
 				// Validate and handle responseType
-				if (methodConfig.responseType) {
+				if (_config.responseType) {
 					try {
-						response.data = await res[methodConfig.responseType]()
+						response.data = await res[_config.responseType]()
 					} catch (error) {
 						// Handle parsing error for the specified responseType
 						throw new Error(
 							`Unsupported response type "${
-								methodConfig.responseType
+								_config.responseType
 							}" specified in the request. The Content-Type of the response is "${res.headers.get(
 								"Content-Type",
 							)}".`,
@@ -122,23 +97,19 @@ const httpAdapter = async <R>(
 				resolve(response)
 			})
 			.catch((error) => {
-				reject(error) // Reject the promise with the error
+				if (error.name === "TimeoutError") {
+					throw new Error(error)
+				} else if (error.name === "AbortError") {
+					throw new Error(error)
+				} else {
+					// A network error, or some other problem.
+					throw new NetworkError(requestConfig, error.message)
+				}
 			})
 	})
 }
 
 const createHTTPMethods = (config?: Options): RequestMethods => {
-	// All the HTTP request methods.
-	const methods = ["get", "head", "put", "delete", "post", "patch", "options"] as const
-
-	const responseTypes = {
-		json: "application/json",
-		text: "text/*",
-		formData: "multipart/form-data",
-		arrayBuffer: "*/*",
-		blob: "*/*",
-	} as const
-
 	const httpShortcuts = {}
 
 	/**
@@ -162,6 +133,7 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 							setHeaders((config.headers = config?.headers || {}), {
 								accept: mimeType,
 							})
+
 							responseType = typeName
 							return responseHandlers
 						},

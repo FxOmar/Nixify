@@ -1,3 +1,6 @@
+import type { HttpMethod, MethodConfig, Options } from "../types"
+import { qs } from "./qs"
+
 export function isEmpty(target) {
 	return target === null || target === undefined || Object.keys(target).length === 0
 }
@@ -71,5 +74,82 @@ export const setHeaders = (target, newHeaders) => {
 		Object.assign(target, { ...processedHeaders })
 	} else {
 		throw new TypeError("Invalid headers. Please provide valid headers.")
+	}
+}
+
+const requestOptionsRegistry = {
+	method: true,
+	headers: true,
+	body: true,
+	mode: true,
+	credentials: true,
+	cache: true,
+	redirect: true,
+	referrer: true,
+	referrerPolicy: true,
+	integrity: true,
+	keepalive: true,
+	signal: true,
+	window: true,
+	dispatcher: true,
+	duplex: true,
+}
+
+export const filterRequestOptions = (requestOptions) => {
+	const filteredOptions = {}
+
+	for (const [key, value] of Object.entries(requestOptions)) {
+		if (requestOptionsRegistry[key]) {
+			filteredOptions[key] = value
+		}
+	}
+
+	return filteredOptions
+}
+
+export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method: HttpMethod) => {
+	const base_uri = new URL(methodConfig.path, config?.url ?? undefined)
+	const abortController = new AbortController()
+	let headersConfig = new Headers({
+		...config?.headers,
+	})
+
+	if (methodConfig.headers) {
+		headersConfig = mergeHeaders(headersConfig, methodConfig.headers)
+	}
+
+	// https://felixgerschau.com/js-manipulate-url-search-params/
+	// Add queries to the url
+	methodConfig?.qs ? (base_uri.search = qs.stringify(methodConfig.qs, config?.qs)) : null
+	delete methodConfig.qs
+	delete methodConfig.path
+
+	// timeout
+	config.timeout = methodConfig.timeout ?? config.timeout ?? 10000
+
+	if (methodConfig.signal) {
+		if (!(methodConfig.signal instanceof AbortSignal))
+			throw new TypeError(
+				typeof methodConfig.signal + " received for signal, but expected an AbortSignal",
+			)
+
+		const originalSignal = methodConfig.signal
+
+		methodConfig.signal.addEventListener("abort", () => {
+			abortController!.abort(originalSignal.reason)
+		})
+	}
+
+	methodConfig.signal = abortController.signal
+
+	return {
+		...config,
+		...methodConfig,
+		method: method.toLocaleUpperCase(),
+		url: base_uri,
+		headers: headersConfig,
+		timeout: methodConfig.timeout || config.timeout,
+		signal: methodConfig.signal,
+		abortController,
 	}
 }

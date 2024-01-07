@@ -8,6 +8,7 @@ const config: Config = {
 	coverageDirectory: "coverage",
 	// An array of file extensions your modules use
 	moduleFileExtensions: ["js", "ts"],
+	testEnvironment: "node",
 }
 
 export default config

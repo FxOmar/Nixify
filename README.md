@@ -1,6 +1,6 @@
 # Reqeza HTTP Client Library
 
-> Reqeza is a lightweight and minimalistic JavaScript HTTP client based on the browser's [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API). It's designed for simplicity and ease of use in browser environments, providing a concise API for making HTTP requests to various services.
+> Reqeza is a lightweight and minimalistic JavaScript HTTP client based on the browser's [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) with no dependencies. It's designed for simplicity and ease of use in browser environments, providing a concise API for making HTTP requests to various services.
 
 ## Installation
 
