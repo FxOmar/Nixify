@@ -17,10 +17,11 @@ export default (
 			reject(new TimeoutError(request))
 		}, timeout)
 
+		// https://typescript.tv/new-features/the-void-operator-in-typescript-and-javascript/#promises-with-side-effects
 		void fetch(request)
 			.then(resolve)
 			.catch(reject)
-			.then(() => {
+			.finally(() => {
 				clearTimeout(timeoutId)
 			})
 	})

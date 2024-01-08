@@ -1,4 +1,5 @@
 export type HttpMethod = "get" | "head" | "put" | "delete" | "post" | "patch" | "options"
+export type ResponseType = "json" | "text" | "blob" | "arrayBuffer" | "formData"
 
 export type ResponseTypes = {
 	json: "application/json"
@@ -15,28 +16,25 @@ export type XOR<T, U> = T | U extends object
 export interface Options {
 	url: string
 	headers?: { [key: string]: string }
-	hooks?: { beforeRequest: (request: Request, config: Options) => void }
+	hooks?: { beforeRequest: (request: Request) => void }
 	qs?: StringifyOptions
 	timeout?: number | false
 }
 
 export type ServiceConfig = { [key: string]: Options }
 
-interface Thenable<U> extends ResponseHandlers<U> {
-	then<TResult1 = ResponseHandlers<U>, TResult2 = never>(
-		callback: (value: ResponseInterface<U>) => TResult1 | PromiseLike<TResult1>,
-	): Promise<TResult1 | TResult2>
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type RequestMethodsType = <U = any>(path: string, options?: MethodConfig) => Thenable<U>
+export type RequestMethodsType = <U = any>(
+	path: string,
+	options?: MethodConfig,
+) => XOR<ResponseHandlers<U>, Promise<ResponseInterface<U>>>
 
 export interface ResponseHandlers<T> {
-	json: () => ResponseInterface<T>
-	text: () => ResponseInterface<string>
-	blob: () => ResponseInterface<Blob>
-	arrayBuffer: () => ResponseInterface<ArrayBuffer>
-	formData: () => ResponseInterface<FormData>
+	json: () => Promise<ResponseInterface<T>>
+	text: () => Promise<ResponseInterface<string>>
+	blob: () => Promise<ResponseInterface<Blob>>
+	arrayBuffer: () => Promise<ResponseInterface<ArrayBuffer>>
+	formData: () => Promise<ResponseInterface<FormData>>
 }
 
 export interface RequestMethods {
@@ -47,7 +45,7 @@ export interface RequestMethods {
 	post: RequestMethodsType
 	patch: RequestMethodsType
 	options: RequestMethodsType
-	beforeRequest: (fn: (request: Request, config: Options) => void) => void
+	beforeRequest: (fn: (request: Request) => void) => void
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	setHeaders: (newHeaders: { [key: string]: string }) => void
 }
@@ -68,7 +66,7 @@ export interface MethodConfig extends Omit<RequestInit, "method"> {
 	path?: string
 	qs?: { [name: string]: queryType | number } // Object of queries.
 	json?: object
-	responseType?: string
+	responseType?: ResponseType
 	timeout?: number | false
 	//   hooks?: { beforeRequest: (request: Request) => void };
 	auth?: boolean | { username: string; password: string }

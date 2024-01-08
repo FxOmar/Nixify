@@ -122,7 +122,6 @@ export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method
 	// Add queries to the url
 	methodConfig?.qs ? (base_uri.search = qs.stringify(methodConfig.qs, config?.qs)) : null
 	delete methodConfig.qs
-	delete methodConfig.path
 
 	// timeout
 	config.timeout = methodConfig.timeout ?? config.timeout ?? 10000

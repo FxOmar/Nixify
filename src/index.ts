@@ -4,12 +4,14 @@ import type {
 	Options,
 	RequestMethods,
 	ResponseInterface,
+	ResponseTypes,
+	ResponseType,
 	ServiceConfig,
 	ServiceReqMethods,
 	XOR,
 } from "./types"
 import { isEmpty, setHeaders, mergeConfigs, filterRequestOptions } from "./utils"
-import { NetworkError, ResponseError } from "./utils/errors"
+import { ResponseError } from "./utils/errors"
 import timeout from "./utils/timeout"
 
 // All the HTTP request methods.
@@ -21,7 +23,7 @@ const responseTypes = {
 	formData: "multipart/form-data",
 	arrayBuffer: "*/*",
 	blob: "*/*",
-} as const
+} as ResponseTypes
 
 const __requestConfig = (config): Request => {
 	if (config.url.protocol !== "https:" && config.url.protocol !== "http:") {
@@ -43,12 +45,12 @@ const __requestConfig = (config): Request => {
 }
 
 const _fetch = async (request: Request, config) => {
-	if (config?.hooks) {
-		config.hooks.beforeRequest(request, config)
+	if (config?.hooks?.beforeRequest) {
+		await config.hooks.beforeRequest(request)
 	}
 
 	if (config.timeout === false) {
-		return fetch(request.clone())
+		return await fetch(request.clone())
 	}
 
 	return timeout(request.clone(), config.abortController, config.timeout)
@@ -63,50 +65,38 @@ const httpAdapter = async <R>(config: Options, method: HttpMethod, methodConfig:
 	const _config = mergeConfigs(config, methodConfig, method)
 	const requestConfig = __requestConfig(_config)
 
-	return new Promise((resolve, reject) => {
-		_fetch(requestConfig, _config)
-			.then((res) => ResponseError(res, requestConfig, _config))
-			.then(async (res) => {
-				// Response Schema
-				const response: Partial<ResponseInterface<R>> = {
-					headers: res.headers,
-					status: res.status,
-					statusText: res.statusText,
-					config: requestConfig,
-				}
+	return _fetch(requestConfig, _config)
+		.then((res) => ResponseError(res, requestConfig, _config))
+		.then(async (res) => {
+			// Response Schema
+			const response: Partial<ResponseInterface<R>> = {
+				headers: res.headers,
+				status: res.status,
+				statusText: res.statusText,
+				config: requestConfig,
+			}
 
-				// Validate and handle responseType
-				if (_config.responseType) {
-					try {
-						response.data = await res[_config.responseType]()
-					} catch (error) {
-						// Handle parsing error for the specified responseType
-						throw new Error(
-							`Unsupported response type "${
-								_config.responseType
-							}" specified in the request. The Content-Type of the response is "${res.headers.get(
-								"Content-Type",
-							)}".`,
-						)
-					}
-				} else {
-					// If no responseType is specified, default to "json"
-					response.data = await res.json()
+			// Validate and handle responseType
+			if (_config.responseType) {
+				try {
+					response.data = await res[_config.responseType]()
+				} catch (error) {
+					// Handle parsing error for the specified responseType
+					throw new Error(
+						`Unsupported response type "${
+							_config.responseType
+						}" specified in the request. The Content-Type of the response is "${res.headers.get(
+							"Content-Type",
+						)}".`,
+					)
 				}
+			} else {
+				// If no responseType is specified, default to "json"
+				response.data = await res.json()
+			}
 
-				resolve(response)
-			})
-			.catch((error) => {
-				if (error.name === "TimeoutError") {
-					throw new Error(error)
-				} else if (error.name === "AbortError") {
-					throw new Error(error)
-				} else {
-					// A network error, or some other problem.
-					throw new NetworkError(requestConfig, error.message)
-				}
-			})
-	})
+			return response
+		})
 }
 
 const createHTTPMethods = (config?: Options): RequestMethods => {
@@ -117,13 +107,14 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 	 */
 	methods.forEach((method) => {
 		httpShortcuts[method] = (path: string, options?: MethodConfig) => {
-			let responseType = "json"
-
 			if (options?.auth && typeof options?.auth === "object") {
 				const { username, password } = options.auth
 				const encodedToken = Buffer.from(`${username}:${password}`).toString("base64")
 				setHeaders(config?.headers, { Authorization: `Basic ${encodedToken}` })
 			}
+
+			// Set responseType from method options
+			let responseType = options?.responseType
 
 			const responseHandlers = {
 				...Object.fromEntries(
@@ -134,13 +125,23 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 								accept: mimeType,
 							})
 
-							responseType = typeName
+							responseType = typeName as ResponseType
+
 							return responseHandlers
 						},
 					]),
 				),
 				then(callback) {
-					httpAdapter(config, method, { path, responseType, ...options }).then(callback)
+					return new Promise((resolve, reject) => {
+						httpAdapter(config, method, { path, responseType, ...options })
+							.then((response) => {
+								callback(response)
+								resolve(response)
+							})
+							.catch((error) => {
+								reject(error)
+							})
+					})
 				},
 			}
 
