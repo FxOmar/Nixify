@@ -1,13 +1,13 @@
 import fetchMock from "jest-fetch-mock"
 
-import Reqeza from "../src/index"
+import Nixify from "../src/index"
 import { HTTPError, TimeoutError } from "../src/utils/errors"
 
 const BASE_URL = "http://localhost:3001"
 
 const METHODS = ["get", "head", "put", "delete", "post", "patch", "options"]
 
-describe("Reqeza functionalities 🚀.", () => {
+describe("Nixify functionalities 🚀.", () => {
 	beforeAll(() => {
 		fetchMock.enableMocks()
 	})
@@ -15,7 +15,7 @@ describe("Reqeza functionalities 🚀.", () => {
 		fetchMock.resetMocks()
 	})
 	it("Should create new instance with all services and all http methods [http.local.get()].", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},
@@ -34,7 +34,7 @@ describe("Reqeza functionalities 🚀.", () => {
 	})
 
 	it("Should create new instance without any service! [http.get()].", async () => {
-		const http = Reqeza.create()
+		const http = Nixify.create()
 
 		METHODS.forEach((prop) => {
 			expect(typeof http[prop]).toBe("function")
@@ -43,7 +43,7 @@ describe("Reqeza functionalities 🚀.", () => {
 	})
 
 	it("Should all methods conclude a function call specifying the responseType?", async () => {
-		const http = Reqeza.create()
+		const http = Nixify.create()
 
 		const TYPES_METHODS = ["json", "text", "blob", "arrayBuffer", "formData"]
 
@@ -53,7 +53,7 @@ describe("Reqeza functionalities 🚀.", () => {
 	})
 
 	it("Should send request without timeout.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 				timeout: false,
@@ -73,7 +73,7 @@ describe("Reqeza functionalities 🚀.", () => {
 		const CacheHeader = { "Cache-Control": "max-age=604800" }
 		const DateHeader = { Date: "Tue, 21 Dec 2021 08:00:00 GMT" }
 
-		const http2 = Reqeza.create({
+		const http2 = Nixify.create({
 			api: {
 				url: BASE_URL,
 				headers: {
@@ -83,7 +83,7 @@ describe("Reqeza functionalities 🚀.", () => {
 			local: {
 				url: BASE_URL,
 				headers: {
-					"X-Requested-By": "Reqeza",
+					"X-Requested-By": "Nixify",
 				},
 			},
 		})
@@ -92,12 +92,12 @@ describe("Reqeza functionalities 🚀.", () => {
 
 		const StoredHeaders = {
 			"x-key-api": "[API_TOKEN]",
-			"X-Requested-By": "Reqeza",
+			"X-Requested-By": "Nixify",
 			...CacheHeader,
 			...DateHeader,
 		}
 
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			github: {
 				url: "https://api.github.com",
 			},
@@ -149,7 +149,7 @@ describe("Reqeza functionalities 🚀.", () => {
 	})
 
 	it("Should accept queries as a request option.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			api: {
 				url: BASE_URL,
 				qs: {
@@ -178,7 +178,7 @@ describe("Reqeza functionalities 🚀.", () => {
 	})
 
 	it("Should send URLSearchParams as body.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			api: {
 				url: BASE_URL,
 			},
@@ -206,7 +206,7 @@ describe("Reqeza functionalities 🚀.", () => {
 	})
 })
 
-describe("Reqeza Hooks", () => {
+describe("Nixify Hooks", () => {
 	beforeAll(() => {
 		fetchMock.enableMocks()
 	})
@@ -214,7 +214,7 @@ describe("Reqeza Hooks", () => {
 		fetchMock.resetMocks()
 	})
 	it("Should calls beforeRequest before making requests.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},
@@ -240,7 +240,7 @@ describe("Reqeza Hooks", () => {
 	})
 
 	it("Should call afterResponse right after making requests.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},
@@ -266,7 +266,7 @@ describe("Reqeza Hooks", () => {
 	})
 
 	it("Should call afterResponse right after making requests.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},
@@ -279,7 +279,7 @@ describe("Reqeza Hooks", () => {
 			},
 		})
 
-		http.local.afterResponse((request, response, config) => {
+		http.local.afterResponse((request) => {
 			request.headers.set("Authorization", "12345")
 		})
 
@@ -298,7 +298,7 @@ describe("Error handling ❌", () => {
 	})
 
 	it("Should cancel request and throw TimeoutError.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 				timeout: 50,
@@ -319,7 +319,7 @@ describe("Error handling ❌", () => {
 	})
 
 	it("Should throw TypeError if protocol not https/http.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: "file://example.com",
 			},
@@ -337,7 +337,7 @@ describe("Error handling ❌", () => {
 	})
 
 	it("Should throw HTTPError response for non-2xx.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},
@@ -355,7 +355,7 @@ describe("Error handling ❌", () => {
 	})
 
 	it("Should throw TypeError in Unsupported responseType.", async () => {
-		const http = Reqeza.create({
+		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},

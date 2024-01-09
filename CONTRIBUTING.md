@@ -1,8 +1,8 @@
 
 
-# Contributing to Reqeza
+# Contributing to Nixify
 
-Thank you for your interest in contributing to Reqeza! By participating in this project.
+Thank you for your interest in contributing to Nixify! By participating in this project.
 
 ## How to Contribute
 
@@ -17,7 +17,7 @@ Click on the "Fork" button on the top right corner of the repository page to cre
 Clone the forked repository to your local machine using the following command:
 
 ```bash
-git clone https://github.com/your-username/Reqeza.git
+git clone https://github.com/your-username/Nixify.git
 ```
 
 Replace `your-username` with your GitHub username and the name of the project.
@@ -70,6 +70,6 @@ Once your pull request is approved, it will be merged into the main branch. Cong
 
 ## Questions
 
-If you have any questions or need further clarification, feel free to reach out to us through [GitHub Issues](https://github.com/FxOmar/Reqeza/issues).
+If you have any questions or need further clarification, feel free to reach out to us through [GitHub Issues](https://github.com/FxOmar/Nixify/issues).
 
-Thank you for contributing to Reqeza!
+Thank you for contributing to Nixify!

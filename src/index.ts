@@ -175,7 +175,7 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
  * @property {Function} {service}.beforeRequest - Service-specific hook to edit request before making HTTP requests for a specific service.
  *
  * @example
- * const http = Reqeza.create({
+ * const http = Nixify.create({
  *    github: {
  *      url: "https://api.github.com",
  *      headers: {

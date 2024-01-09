@@ -1,10 +1,10 @@
 {
-  "name": "reqeza",
+  "name": "nixify",
   "version": "3.0.0",
-  "description": "Tiny JavaScript HTTP client based on browser Fetch API.",
+  "description": "Nixify is a tiny JavaScript HTTP client based on browser Fetch API.",
   "type": "module",
-  "module": "@Reqeza/index.js",
-  "types": "@Reqeza/index.d.ts",
+  "module": "@Nixify/index.js",
+  "types": "@Nixify/index.d.ts",
   "scripts": {
     "build": "tsup",
     "test": "jest",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/FxOmar/Reqeza.git"
+    "url": "https://github.com/FxOmar/Nixify.git"
   },
   "keywords": [
     "http",
@@ -23,9 +23,9 @@
   "author": "Omar Chadidi",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/FxOmar/Reqeza/issues"
+    "url": "https://github.com/FxOmar/Nixify/issues"
   },
-  "homepage": "https://github.com/FxOmar/Reqeza#readme",
+  "homepage": "https://github.com/FxOmar/Nixify#readme",
   "devDependencies": {
     "@types/jest": "^29.5.11",
     "@typescript-eslint/eslint-plugin": "^6.16.0",

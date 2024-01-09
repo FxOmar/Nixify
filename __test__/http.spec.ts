@@ -1,4 +1,4 @@
-import Reqeza from "../src/index"
+import Nixify from "../src/index"
 
 import { startServer } from "./testing-server"
 
@@ -11,7 +11,7 @@ describe("Real-life data fetching 🗿.", () => {
 	beforeAll(() => {
 		server = startServer()
 
-		http = Reqeza.create({
+		http = Nixify.create({
 			api: {
 				url: BASE_URL,
 			},
@@ -58,21 +58,21 @@ describe("Real-life data fetching 🗿.", () => {
 	})
 
 	// it("Should fetch without creating new instance.", async () => {
-	// 	const { data, status } = await Reqeza.get<string>(`${BASE_URL}/text`).text()
+	// 	const { data, status } = await Nixify.get<string>(`${BASE_URL}/text`).text()
 
 	// 	expect(status).toBe(200)
 	// 	expect(data).toBe("Hello, world")
 	// })
 
 	// it("Should fetch data with the given interface.", async () => {
-	// 	const { data, status } = await Reqeza.get<{ message: string }>(`${BASE_URL}/book`)
+	// 	const { data, status } = await Nixify.get<{ message: string }>(`${BASE_URL}/book`)
 
 	// 	expect(status).toBe(200)
 	// 	expect(data.message).toBe("Hello, world")
 	// })
 
 	it("Should set header using function helper setHeader", async () => {
-		const http2 = Reqeza.create({
+		const http2 = Nixify.create({
 			local: {
 				url: BASE_URL,
 			},

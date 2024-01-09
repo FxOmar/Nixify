@@ -3,7 +3,7 @@ import { defineConfig } from "tsup"
 export default defineConfig({
 	entryPoints: ["./src/index.ts"],
 	entry: ["./src/**/*.ts"],
-	outDir: "@Reqeza",
+	outDir: "@Nixify",
 	clean: true,
 	format: "esm",
 	platform: "browser",

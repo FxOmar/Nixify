@@ -1,6 +1,6 @@
-# Reqeza HTTP Client Library
+# Nixify HTTP Client Library
 
-> Reqeza is a lightweight and minimalistic JavaScript HTTP client based on the browser's [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) with no dependencies. It's designed for simplicity and ease of use in browser environments, providing a concise API for making HTTP requests to various services.
+> Nixify is a lightweight and minimalistic JavaScript HTTP client based on the browser's [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) with no dependencies. It's designed for simplicity and ease of use in browser environments, providing a concise API for making HTTP requests to various services.
 
 ## Installation
 
@@ -8,50 +8,52 @@
 
 Using npm:
 ```bash
-npm install reqeza
+npm install nixify
 ```
 Using pnpm:
 ```bash
-pnpm add reqeza
+pnpm add nixify
 ```
 Using yarn:
 ```bash
-yarn add reqeza
+yarn add nixify
 ```
 
-To import Reqeza you have to use ECMAScript
+To import Nixify you have to use ECMAScript
 
 ```javascript
-import Reqeza from "reqeza";
+import Nixify from "nixify";
 ```
 
-## Features
-- **Tiny and Lightweight**: Reqeza is a minimalistic HTTP client focused on simplicity and a small footprint.
+## Nixify Features
 
-- **First-class TypeScript support**: Developed using TypeScript, ensuring a seamless and robust experience for TypeScript users.
+- **Tiny and Lightweight**: Nixify is designed as a minimalistic HTTP client with a focus on simplicity and a small package size.
+
+- **First-class TypeScript Support**: Developed entirely in TypeScript, ensuring a seamless and robust experience for TypeScript users.
 
 - **Fetch API Integration**: Built on top of the browser's Fetch API, leveraging its capabilities for making HTTP requests.
 
-- **Methods Shortcut**: Utilize shorthand methods for common tasks, such as `*FetchLite.get().text()*`, to enhance code readability.
+- **Methods Shortcut**: Utilize shorthand methods for common tasks, such as `*Nixify.get().text()*`, to enhance code readability.
 
 - **Service Configuration**: Easily configure and create instances for different services.
 
 - **Header Management**: Set headers globally or for specific service instances. Modify headers before making requests, providing flexibility for customization.
 
-- **Hooks**: Execute functions before making requests for both global and service-specific instances. Modify request headers or perform other actions.
+- **Hooks**: Leverage the `afterResponse` and `beforeRequest` hooks for executing functions before requesting global and service-specific instances. Modify request headers or perform other actions.
 
 - **Concise API**: Provides a straightforward and easy-to-use API for handling HTTP requests without unnecessary complexity.
 
-- **Automatic Transforms for JSON Data**: Enjoy automatic handling of JSON data, simplifying the interaction with APIs that return JSON responses.
+- **Automatic Transforms for JSON Data**: Enjoy automatic handling of JSON data, simplifying the interaction with APIs that return JSON responses. Protects against prototype poisoning.
 
 - **Cancel Requests**: Efficiently manage ongoing requests with the ability to cancel them as needed.
+
 
 
 ## Usage
 
 ```typescript
-// Create an instance of Reqeza with predefined services
-const http = Reqeza.create({
+// Create an instance of Nixify with predefined services
+const http = Nixify.create({
   github: {
     url: "https://api.github.com",
     headers: {
@@ -79,6 +81,10 @@ http.gitlab.beforeRequest((request, config) => {
 http.beforeRequest((request, config) => {
   request.headers.set("Content-type", "application/json");
 });
+
+// Still under development (WIP)
+http.gitlab.afterResponse((request, response config) => {});
+http.afterResponse((request, response config) => {});
 
 // TypeScript Version
 interface Repositories {}
@@ -111,12 +117,32 @@ formData.append('username', 'superAdmin');
 formData.append('password', 'admin1234');
 
 const { data } = await http.post(path, { body: formData })
+
+/**
+ * Cancellation
+ */
+const controller = new AbortController();
+const { signal } = controller;
+
+setTimeout(() => {
+	controller.abort();
+}, 5000);
+
+try {
+	await http.get(url, { signal }).text();
+} catch (error) {
+	if (error.name === 'AbortError') {
+		console.log('Fetch aborted');
+	} else {
+		console.error('Fetch error:', error);
+	}
+}
 ```
 
 ## API DOCUMENTATION
-##### `Reqeza.create(config: { [name: string]: Options }): ServiceReqMethods | RequestMethods`
+##### `Nixify.create(config: { [name: string]: Options }): ServiceReqMethods | RequestMethods`
 
-Creates an instance of Reqeza with predefined service configurations.
+Creates an instance of Nixify with predefined service configurations.
 
 ##### Parameters:
 
@@ -124,12 +150,12 @@ Creates an instance of Reqeza with predefined service configurations.
 
 ##### Returns:
 
-- `ReqezaInstance`: An instance of Reqeza configured with the provided options.
+- `NixifyInstance`: An instance of Nixify configured with the provided options.
 
 ##### Example:
 
 ```typescript
-const http = Reqeza.create({
+const http = Nixify.create({
   github: {
     url: "https://api.github.com",
     headers: {
@@ -143,14 +169,14 @@ const http = Reqeza.create({
 });
 ```
 
-##### `Reqeza.beforeRequest(fn: (request: Request, config: Options) => void)`
-##### `Reqeza.{service}.beforeRequest(fn: (request: Request, config: Options) => void)`
+##### `Nixify.beforeRequest(fn: (request: Request, config: Options) => void)`
+##### `Nixify.{service}.beforeRequest(fn: (request: Request, config: Options) => void)`
 Prior to initiating a request for a particular service instance or globally, customize request headers or execute additional actions.
 
 ##### Parameters:
 
 - `request`: A representation of the Request API, encapsulating HTTP configurations.
-- `config`: An object with `ReqezaInstance` configurations.
+- `config`: An object with `NixifyInstance` configurations.
 
 ##### Example:
 
@@ -165,8 +191,24 @@ http.beforeRequest((request, config) => {
   request.headers.set("Content-type", "application/json");
 });
 ```
-##### `Reqeza.setHeaders(headers: { [key: string]: string })`
-##### `Reqeza.{service}.setHeaders(headers: { [key: string]: string })`
+##### `Nixify.afterResponse(fn: (request: Request, response: Response, config: Options) => void)`
+##### `Nixify.{service}.afterResponse(fn: (request: Request, response: Response config: Options) => void)`
+ Still under development.
+
+##### Parameters:
+
+- `request`: A representation of the Request API, encapsulating HTTP configurations.
+- `response`: A representation of the Response API.
+- `config`: An object with `NixifyInstance` configurations.
+
+##### Example:
+
+```typescript
+http.gitlab.afterResponse((request, config) => {});
+http.afterResponse((request, config) => {});
+```
+##### `Nixify.setHeaders(headers: { [key: string]: string })`
+##### `Nixify.{service}.setHeaders(headers: { [key: string]: string })`
 Before making a request for a specific service instance or globally, modify request headers.
 
 ##### Parameters:
