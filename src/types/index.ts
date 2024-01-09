@@ -69,7 +69,7 @@ export interface MethodConfig extends Omit<RequestInit, "method"> {
 	responseType?: ResponseType
 	timeout?: number | false
 	//   hooks?: { beforeRequest: (request: Request) => void };
-	auth?: boolean | { username: string; password: string }
+	// auth?: boolean | { username: string; password: string }
 }
 
 export type queryType = string | URLSearchParams | Record<string, string> | string[][]

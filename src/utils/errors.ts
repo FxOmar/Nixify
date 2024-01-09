@@ -28,13 +28,3 @@ export class TimeoutError extends Error {
 		this.request = request
 	}
 }
-
-export class NetworkError extends Error {
-	public request: Request
-
-	constructor(request: Request, message: string) {
-		super(message)
-		this.name = "NetworkError"
-		this.request = request
-	}
-}

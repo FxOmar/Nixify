@@ -118,6 +118,15 @@ export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method
 		headersConfig = mergeHeaders(headersConfig, methodConfig.headers)
 	}
 
+	/**
+	 * if body is json, then set headers to content-type JSON
+	 */
+	if (methodConfig?.json) {
+		methodConfig.body = JSON.stringify(methodConfig.json)
+		headersConfig.append("Content-Type", "application/json; charset=UTF-8")
+		delete methodConfig.json
+	}
+
 	// https://felixgerschau.com/js-manipulate-url-search-params/
 	// Add queries to the url
 	methodConfig?.qs ? (base_uri.search = qs.stringify(methodConfig.qs, config?.qs)) : null

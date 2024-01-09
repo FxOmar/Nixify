@@ -25,18 +25,9 @@ const responseTypes = {
 	blob: "*/*",
 } as ResponseTypes
 
-const __requestConfig = (config): Request => {
+const _request = (config): Request => {
 	if (config.url.protocol !== "https:" && config.url.protocol !== "http:") {
 		throw new TypeError(`Unsupported protocol, ${config.url.protocol}`)
-	}
-
-	/**
-	 * if body is json, then set headers to content-type JSON
-	 */
-	if (config?.json) {
-		config.body = JSON.stringify(config.json)
-		config.headers.append("Content-Type", "application/json; charset=UTF-8")
-		delete config.json
 	}
 
 	const request = filterRequestOptions(config)
@@ -57,19 +48,19 @@ const _fetch = async (request: Request, config) => {
 }
 
 /**
- * HttpAdapter for making http requests 🦅 to the given API'S.
+ * HttpAdapter make http requests 🦅.
  *
- * @returns {Promise<ResponseInterface>}
+ * @returns {Promise<ResponseInterface<U>>}
  */
 const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: MethodConfig) => {
 	const _config = mergeConfigs(config, methodConfig, method)
-	const requestConfig = __requestConfig(_config)
+	const request = _request(_config)
 
-	const response = await _fetch(requestConfig, _config)
+	const response = await _fetch(request, _config)
 
 	// non-2xx HTTP responses into errors:
 	if (!response.ok) {
-		throw new HTTPError(response.clone(), requestConfig)
+		throw new HTTPError(response.clone(), request)
 	}
 
 	// Response Schema
@@ -78,7 +69,7 @@ const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: Me
 		headers: response.headers,
 		status: response.status,
 		statusText: response.statusText,
-		config: requestConfig,
+		config: request,
 	}
 
 	const awaitedResponse = response.clone()
@@ -88,16 +79,14 @@ const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: Me
 			// https://datatracker.ietf.org/doc/html/rfc2616#section-10.2.5
 			if (response.status === 204) return ""
 
-			// https://github.com/sindresorhus/ky/blob/38ac18bc1ac3268130de766891ce9b718eb8145a/source/core/Ky.ts#L94-L98
-			const arrayBuffer = await awaitedResponse.clone().arrayBuffer()
-			const responseSize = arrayBuffer.byteLength
+			const data = await awaitedResponse.text()
 
-			if (responseSize === 0) {
+			if (data.length === 0) {
 				return ""
 			}
 
 			// JSON.parse() replacement with prototype poisoning protection.
-			return json.parse(await awaitedResponse.text())
+			return json.parse(data)
 		}
 
 		return await awaitedResponse[_config.responseType]()
@@ -109,7 +98,7 @@ const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: Me
 			_response.data = await parseResponse()
 		} catch (error) {
 			// Handle parsing error for the specified responseType
-			throw new Error(
+			throw new TypeError(
 				`Unsupported response type "${
 					_config.responseType
 				}" specified in the request. The Content-Type of the response is "${response.headers.get(
@@ -130,12 +119,6 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 	 */
 	methods.forEach((method) => {
 		httpShortcuts[method] = (path: string, options?: MethodConfig) => {
-			if (options?.auth && typeof options?.auth === "object") {
-				const { username, password } = options.auth
-				const encodedToken = Buffer.from(`${username}:${password}`).toString("base64")
-				setHeaders(config?.headers, { Authorization: `Basic ${encodedToken}` })
-			}
-
 			// If no responseType is specified, default to "json"
 			let responseType = options?.responseType || "json"
 
