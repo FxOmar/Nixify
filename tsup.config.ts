@@ -1,13 +1,17 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsup"
 
 export default defineConfig({
-  entry: ["./src/index.ts"],
-  outDir: "@Reqeza",
-  sourcemap: true,
-  clean: true,
-  format: "esm",
-  platform: "browser",
-  target: ["chrome58", "firefox57", "safari11", "edge16"],
-  minify: true,
-  dts: true,
-});
+	entryPoints: ["./src/index.ts"],
+	entry: ["./src/**/*.ts"],
+	outDir: "@Nixify",
+	clean: true,
+	format: "esm",
+	platform: "browser",
+	target: "es2020",
+	bundle: true,
+	skipNodeModulesBundle: true,
+	minify: true,
+	dts: true,
+	splitting: true,
+	treeshake: true,
+})

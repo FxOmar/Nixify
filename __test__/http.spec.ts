@@ -1,97 +1,89 @@
-require("isomorphic-fetch");
-import Reqeza from "../src/index";
+import Nixify from "../src/index"
 
-import { startServer, stopServer } from "../src/utils/testing-server";
+import { startServer } from "./testing-server"
 
-const BASE_URL = "http://localhost:3001";
+const BASE_URL = "http://localhost:3001"
 
-let http;
+let http
+let server
 
-describe("HTTP functionalities", () => {
-  beforeAll(() => {
-    startServer();
+describe("Real-life data fetching 🗿.", () => {
+	beforeAll(() => {
+		server = startServer()
 
-    http = Reqeza.create({
-      PREFIX_URL: {API: BASE_URL},
-    });
-  });
+		http = Nixify.create({
+			api: {
+				url: BASE_URL,
+			},
+		})
+	})
 
-  afterAll(() => {
-    stopServer();
-  });
+	afterAll(async () => {
+		await server.close()
+	})
 
-  it("Should fetch data from API.", async () => {
-    const { data, status } = await http.get("/text").text();
+	it("Should fetch data from API.", async () => {
+		const { data, status } = await http.api.get("/text").text()
 
-    expect(status).toBe(200);
-    expect(data).toBe("Hello, world");
-  });
+		expect(status).toBe(200)
+		expect(data).toBe("Hello, world")
+	})
 
-  it("Should send POST request to API.", async () => {
-    const title = "Think and grow rich";
+	it("Should send POST request to API.", async () => {
+		const title = "Think and grow rich"
 
-    const { data, status } = await http
-      .post("/book", {
-        json: {
-          title,
-        },
-      })
-      .json();
+		const { data, status } = await http.api
+			.post("/book", {
+				json: {
+					title,
+				},
+			})
+			.json()
 
-    const res = {
-      title,
-      message: "Book added successfully.",
-    };
+		const res = {
+			title,
+			message: "Book added successfully.",
+		}
 
-    expect(status).toBe(200);
-    expect(data).toEqual(res);
-  });
+		expect(status).toBe(200)
+		expect(data).toEqual(res)
+	})
 
-  it("Should parse response with json by default.", async () => {
-    const { data, status } = await http.get("/book");
+	it("Should parse response with json by default.", async () => {
+		const { data, status } = await http.api.get("/book")
 
-    expect(status).toBe(200);
+		expect(status).toBe(200)
 
-    expect(typeof data).toBe("object");
-  });
+		expect(typeof data).toBe("object")
+	})
 
-  it("Should fetch without creating new instance.", async () => {
-    const { data, status } = await Reqeza.get<string>(
-      `${BASE_URL}/text`
-    ).text();
+	// it("Should fetch without creating new instance.", async () => {
+	// 	const { data, status } = await Nixify.get<string>(`${BASE_URL}/text`).text()
 
-    expect(status).toBe(200);
-    expect(data).toBe("Hello, world");
-  });
+	// 	expect(status).toBe(200)
+	// 	expect(data).toBe("Hello, world")
+	// })
 
-  it("Should fetch data with the given interface.", async () => {
-    const { data, status } = await Reqeza.get<{ message: string }>(
-      `${BASE_URL}/book`
-    );
+	// it("Should fetch data with the given interface.", async () => {
+	// 	const { data, status } = await Nixify.get<{ message: string }>(`${BASE_URL}/book`)
 
-    expect(status).toBe(200);
-    expect(data.message).toBe("Hello, world");
-  });
+	// 	expect(status).toBe(200)
+	// 	expect(data.message).toBe("Hello, world")
+	// })
 
-  it("Should accept queries as a request option.", async () => {
-    const http = Reqeza.create({
-      PREFIX_URL: { 
-        API: BASE_URL, 
-        API2: BASE_URL,
-      },
-    });
+	it("Should set header using function helper setHeader", async () => {
+		const http2 = Nixify.create({
+			local: {
+				url: BASE_URL,
+			},
+		})
 
-    const fakeDate = { name: "Rich dad, Poor dad" };
+		const header = { "Cache-Control": "max-age=604800" }
 
-    const { data, config } = await http.get<{ message: string }>("/book", {
-      PREFIX_URL: "API2",
-      qs: fakeDate,
-    });
+		http2.local.setHeaders(header)
 
-    const url = new URL(config.url);
+		const { config } = await http2.local.get("/book").json()
 
-    expect(fakeDate.name).toBe(url.searchParams.get("name"));
-
-    expect(data).toEqual({ message: fakeDate.name });
-  });
-});
+		expect(config.headers.get("Cache-Control")).toEqual(header["Cache-Control"])
+	})
+})

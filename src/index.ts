@@ -1,187 +1,253 @@
-import {
-  CreateNewInstance,
-  MethodConfig,
-  Options,
-  RequestMethods,
-  RequestMethodsType,
-  ResponseInterface,
-  queryType,
-} from "./interfaces";
-import { ValidationError, ResponseError, has } from "./utils";
+import type {
+	HttpMethod,
+	MethodConfig,
+	Options,
+	RequestMethods,
+	ResponseTypes,
+	ResponseType,
+	ServiceConfig,
+	ServiceReqMethods,
+	XOR,
+} from "./types"
+import { isEmpty, setHeaders, mergeConfigs, filterRequestOptions } from "./utils"
+import timeout from "./utils/timeout"
+import json from "./utils/json-parse"
+import { HTTPError } from "./utils/errors"
 
 // All the HTTP request methods.
-const METHODS = ["get", "head", "put", "delete", "post", "patch", "options"];
-// Response types
-const TYPES_METHODS = ["json", "text", "blob", "arrayBuffer", "formData"];
+const methods = ["get", "head", "put", "delete", "post", "patch", "options"] as const
 
-class Http {
-  constructor(
-    protected __options: Options = {},
-    protected __methodsConfig: MethodConfig
-  ) {
-    this.__options = __options;
-    this.__methodsConfig = __methodsConfig;
-  }
+const responseTypes = {
+	json: "application/json",
+	text: "text/*",
+	formData: "multipart/form-data",
+	arrayBuffer: "*/*",
+	blob: "*/*",
+} as ResponseTypes
 
-  /**
-   * Parse the given URI
-   */
-  protected get __parseURI(): URL {
-    try {
-      const BASE_URL =
-        !has(this.__options, "PREFIX_URL") || this.__options.PREFIX_URL === null
-          ? undefined
-          : typeof this.__options.PREFIX_URL === "object" &&
-            this.__methodsConfig.PREFIX_URL
-          ? this.__options.PREFIX_URL[this.__methodsConfig.PREFIX_URL]
-          : Object.values(this.__options.PREFIX_URL)[0];
+const _request = (config): Request => {
+	if (config.url.protocol !== "https:" && config.url.protocol !== "http:") {
+		throw new TypeError(`Unsupported protocol, ${config.url.protocol}`)
+	}
 
-      const url = new URL(this.__methodsConfig.path, BASE_URL);
+	const request = filterRequestOptions(config)
 
-      // https://felixgerschau.com/js-manipulate-url-search-params/
-      // Add queries to the url
-      has(this.__methodsConfig, "qs")
-        ? (url.search = new URLSearchParams(
-            this.__methodsConfig.qs as queryType
-          ).toString())
-        : null;
-
-      return url;
-    } catch (error) {
-      throw new ValidationError("The given URI is invalid.");
-    }
-  }
-
-  protected get __configuration(): Request {
-    const headersConfig = new Headers(this.__methodsConfig.headers);
-
-    /**
-     * if body is json, then set headers to content-type JSON
-     */
-    if (
-      ["post", "put", "patch"].includes(this.__methodsConfig.method) &&
-      has(this.__methodsConfig, "json") &&
-      !has(this.__methodsConfig, "headers['Content-Type']")
-    ) {
-      headersConfig.append("Content-Type", "application/json; charset=UTF-8");
-    }
-
-    return new Request(this.__parseURI.toString(), {
-      method: this.__methodsConfig.method.toLocaleUpperCase(),
-      headers: headersConfig,
-      /*
-       * Note: The body type can only be a Blob, BufferSource, FormData, URLSearchParams,
-       * USVString or ReadableStream type,
-       * so for adding a JSON object to the payload you need to stringify that object.
-       */
-      body: Object.hasOwnProperty.call(this.__methodsConfig, "json")
-        ? JSON.stringify(this.__methodsConfig.json)
-        : this.__methodsConfig.body, // body data type must match "Content-Type" header
-
-      // Cancel request
-      signal: this.__methodsConfig.signal,
-    });
-  }
-  /**
-   * HttpAdapter for making http requests 🦅 to the given API'S.
-   *
-   * @returns {Promise<ResponseInterface>}
-   */
-  httpAdapter<R>() {
-    const requestConfig = this.__configuration;
-
-    return fetch(requestConfig)
-      .then(ResponseError)
-      .then(async (res) => {
-        /**
-         * Retrieve response Header.
-         *
-         * @param headers
-         * @returns Response Headers
-         */
-        const retrieveHeaders = () => {
-          const headers = {};
-          for (const pair of res.headers.entries()) {
-            headers[pair[0]] = pair[1];
-          }
-
-          return headers;
-        };
-
-        // Response Schema
-        const response: ResponseInterface<R> = {
-          data: await res[this.__methodsConfig.responseType](),
-          headers: retrieveHeaders(),
-          status: res.status,
-          statusText: res.statusText,
-          config: requestConfig,
-        };
-
-        return response;
-      });
-  }
+	return new Request(config.url.toString(), request)
 }
 
-const Reqeza: CreateNewInstance = {
-  /**
-   * Create new instance for the given configuration.
-   *
-   * @param {Options} config - PREFIX_URL { API: string: URI: string}
-   *
-   * @returns {Methods} - new instance of Http
-   *
-   * @example
-   * const http = Reqeza.create({
-   *  PREFIX_URL: {
-   *    API: "https://api.github.com"
-   *  }
-   * })
-   */
-  create(config?: Options): RequestMethods {
-    /**
-     * Build methods shortcut *Http.get().text()*.
-     */
-    const methodsBuilder = METHODS.map((method) => {
-      return {
-        [method]: (
-          path: string,
-          options?: MethodConfig
-        ): RequestMethodsType => {
-          let responseType = "json";
+const _fetch = async (request: Request, config) => {
+	if (config?.hooks?.beforeRequest) {
+		await config.hooks.beforeRequest(request)
+	}
 
-          // Response types methods generator.
-          const setType = {
-            ...Object.assign(
-              {},
-              ...TYPES_METHODS.map((typeName) => ({
-                [typeName]: () => {
-                  responseType = typeName;
+	if (config.timeout === false) {
+		return await fetch(request.clone())
+	}
 
-                  return setType;
-                },
-              }))
-            ),
-            // https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
-            then(callback) {
-              return new Http(config, {
-                path,
-                method,
-                responseType,
-                ...options,
-              })
-                .httpAdapter()
-                .then(callback);
-            },
-          };
+	return timeout(request.clone(), config.abortController, config.timeout)
+}
 
-          return setType;
-        },
-      };
-    });
+/**
+ * HttpAdapter make http requests 🦅.
+ *
+ * @returns {Promise<ResponseInterface<U>>}
+ */
+const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: MethodConfig) => {
+	const _config = mergeConfigs(config, methodConfig, method)
+	const request = _request(_config)
 
-    return Object.assign({}, ...methodsBuilder);
-  },
-};
+	const response = await _fetch(request, _config)
 
-// Merge request methods with Reqeza Object.
-export default Object.assign(Reqeza, Reqeza.create());
+	// Still under development
+	if (config?.hooks?.afterResponse) {
+		delete _config.abortController
+
+		response.json = async () => json.parse(await response.clone().text())
+
+		await config.hooks.afterResponse(request, response, _config)
+	}
+
+	// non-2xx HTTP responses into errors:
+	if (!response.ok) {
+		throw new HTTPError(response.clone(), request)
+	}
+
+	// Response Schema
+	const _response = {
+		data: null,
+		headers: response.headers,
+		status: response.status,
+		statusText: response.statusText,
+		config: request,
+	}
+
+	const awaitedResponse = response.clone()
+
+	const parseResponse = async () => {
+		if (_config.responseType === "json") {
+			// https://datatracker.ietf.org/doc/html/rfc2616#section-10.2.5
+			if (response.status === 204) return ""
+
+			const data = await awaitedResponse.text()
+
+			if (data.length === 0) {
+				return ""
+			}
+
+			// JSON.parse() replacement with prototype poisoning protection.
+			return json.parse(data)
+		}
+
+		return await awaitedResponse[_config.responseType]()
+	}
+
+	// Validate and handle responseType
+	if (_config.responseType) {
+		try {
+			_response.data = await parseResponse()
+		} catch (error) {
+			// Handle parsing error for the specified responseType
+			throw new TypeError(
+				`Unsupported response type "${
+					_config.responseType
+				}" specified in the request. The Content-Type of the response is "${response.headers.get(
+					"Content-Type",
+				)}".`,
+			)
+		}
+	}
+
+	return _response
+}
+
+const createHTTPMethods = (config?: Options): RequestMethods => {
+	const httpShortcuts = {}
+
+	/**
+	 * Build methods shortcut *Http.get().text()*.
+	 */
+	methods.forEach((method) => {
+		httpShortcuts[method] = (path: string, options?: MethodConfig) => {
+			// If no responseType is specified, default to "json"
+			let responseType = options?.responseType || "json"
+
+			const responseHandlers = {
+				...Object.fromEntries(
+					Object.entries(responseTypes).map(([typeName, mimeType]) => [
+						typeName,
+						() => {
+							setHeaders((config.headers = config?.headers || {}), {
+								accept: mimeType,
+							})
+
+							responseType = typeName as ResponseType
+
+							return responseHandlers
+						},
+					]),
+				),
+				// https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
+				then(...callback) {
+					return httpAdapter(config, method, { path, responseType, ...options }).then(
+						...callback,
+					)
+				},
+				catch(callback) {
+					return responseHandlers.then().catch(callback)
+				},
+			}
+
+			return responseHandlers
+		}
+	})
+
+	return httpShortcuts as RequestMethods
+}
+
+/**
+ * Factory function for creating an HTTP client with configurable service instances.
+ *
+ * @function create
+ * @param {Object} [config=null] - Configuration object for defining service instances with their respective URLs and headers.
+ * @returns {Object} An HTTP client with service instances and utility functions.
+ * @property {Object} {service} - Individual service instance with methods for making HTTP requests.
+ * @property {Function} {service}.setHeaders - Sets headers for a specific service instance.
+ * @property {Function} {service}.beforeRequest - Service-specific hook to edit request before making HTTP requests for a specific service.
+ *
+ * @example
+ * const http = Nixify.create({
+ *    github: {
+ *      url: "https://api.github.com",
+ *      headers: {
+ *        "x-API-KEY": "[TOKEN]"
+ *      }
+ *    },
+ *    gitlab: {
+ *      url: "https://gitlab.com/api/v4/",
+ *      headers: {}
+ *    },
+ * });
+ *
+ * // Set headers for a specific service instance
+ * http.gitlab.setHeaders({ "authorization": `Bearer ${token}` });
+ *
+ * // Set headers before making a request for a specific service instance
+ * http.gitlab.beforeRequest(request => {
+ *   // Modify request headers or perform other actions
+ * });
+ *
+ * http.beforeRequest(request => {
+ *   // Modify request headers or perform other actions
+ * });
+ *
+ * await http.github.get('/search/repositories').json();
+ */
+const create = <T extends ServiceConfig>(config?: T) => {
+	const instances = Object.fromEntries(
+		Object.entries(config || { default: {} }).map(([service, serviceConfig]) => [
+			service,
+			{
+				...createHTTPMethods(serviceConfig),
+				beforeRequest: (fn) => {
+					if (serviceConfig?.hooks?.beforeRequest) {
+						throw new TypeError(
+							"beforeRequest has already been invoked within configuration.",
+						)
+					}
+
+					serviceConfig.hooks = {}
+					serviceConfig.hooks.beforeRequest = fn
+				},
+				afterResponse: (fn) => {
+					if (serviceConfig?.hooks?.afterResponse) {
+						throw new TypeError(
+							"afterResponse has already been invoked within configuration.",
+						)
+					}
+
+					serviceConfig.hooks = {}
+					serviceConfig.hooks.afterResponse = fn
+				},
+				setHeaders: (newHeaders) =>
+					setHeaders((serviceConfig.headers = serviceConfig.headers || {}), newHeaders),
+			},
+		]),
+	)
+
+	const forEachInstance = (arg) => Object.values(instances).forEach(arg)
+
+	const resultingInstances = isEmpty(config)
+		? { ...instances.default }
+		: {
+				...instances,
+				...instances[Object.keys(instances)[0]],
+				beforeRequest: (fn) => forEachInstance((instance) => instance.beforeRequest(fn)),
+				afterResponse: (fn) => forEachInstance((instance) => instance.afterResponse(fn)),
+				setHeaders: (newHeaders) =>
+					forEachInstance((instance) => instance.setHeaders(newHeaders)),
+			}
+
+	return resultingInstances as XOR<ServiceReqMethods<T>, RequestMethods>
+}
+
+export default { create }

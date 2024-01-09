@@ -1,25 +1,30 @@
-export class ValidationError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "ValidationError";
-    this.message = message;
-  }
+/**
+ *  https://github.com/sindresorhus/ky/blob/main/source/errors/HTTPError.ts
+ */
+export class HTTPError extends Error {
+	public response: Response
+	public request: Request
 
-  toJSON() {
-    return {
-      error: {
-        name: this.name,
-        message: this.message,
-        stacktrace: this.stack,
-      },
-    };
-  }
+	constructor(response: Response, request: Request) {
+		const code = response.status || response.status === 0 ? response.status : ""
+		const title = response.statusText || ""
+		const status = `${code} ${title}`.trim()
+		const reason = status ? `status code ${status}` : "an unknown error"
+
+		super(`Request failed with ${reason}`)
+
+		this.name = "HTTPError"
+		this.response = response
+		this.request = request
+	}
 }
 
-export function ResponseError(response) {
-  if (!response.ok) {
-    throw new ValidationError(response.statusText);
-  }
+export class TimeoutError extends Error {
+	public request: Request
 
-  return response;
+	constructor(request: Request) {
+		super("Request timed out")
+		this.name = "TimeoutError"
+		this.request = request
+	}
 }
