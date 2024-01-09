@@ -12,10 +12,6 @@ describe("Creating new instance of http.", () => {
 	})
 	beforeEach(() => {
 		fetchMock.resetMocks()
-		// fetchMock.doMock()
-	})
-	afterEach(() => {
-		jest.useRealTimers()
 	})
 	it("Should create new instance with all services and all http methods [http.local.get()].", async () => {
 		const http = Reqeza.create({
@@ -55,7 +51,7 @@ describe("Creating new instance of http.", () => {
 		})
 	})
 
-	it("Should test beforeRequest.", async () => {
+	it("Should calls beforeRequest before making requests.", async () => {
 		const http = Reqeza.create({
 			local: {
 				url: BASE_URL,
@@ -69,71 +65,35 @@ describe("Creating new instance of http.", () => {
 			},
 		})
 
-		http.local.beforeRequest((req) => {
-			console.log("called", req.headers.get("Content-Type"))
-		})
+		const beforeRequestMock = jest.fn()
 
-		http.local
-			.get("/book")
-			.text()
-			.then((res) => {
-				console.log("request", res.headers.get("Content-Type"))
-			})
-		http.local.get("/book", { responseType: "text" }).then((res) => {
-			console.log("request", res.headers.get("Content-Type"))
-		})
-		http.local
-			.get("/book")
-			.text()
-			.then((res) => {
-				console.log("request", res.headers.get("Content-Type"))
-			})
-			.catch((err) => {
-				console.error(err)
-			})
+		http.local.beforeRequest(beforeRequestMock)
 
-		// expect(status).toBe(200)
-		// expect(defaultTimeout).toBe(10000)
+		await http.local.get("/book").json()
+		await http.local.get("/book", { responseType: "text" })
+		await http.local.get("/book").text()
+
+		expect(beforeRequestMock).toHaveBeenCalled()
+		expect(beforeRequestMock).toHaveBeenCalledTimes(3) // Adjust the number based on your use case
 	})
 
-	it.skip("Should have timeout default of 10000.", async () => {
+	it("Should cancel request and throw timeout error.", async () => {
 		const http = Reqeza.create({
 			local: {
 				url: BASE_URL,
+				timeout: 50,
 			},
 		})
 
-		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), { status: 200 })
+		fetchMock.mockResponseOnce(
+			() => new Promise((resolve) => setTimeout(() => resolve({ body: "ok" }), 200)),
+		)
 
-		const defaultTimeout = 0
-
-		// http.local.beforeRequest((req) => {
-		// 	defaultTimeout = config.timeout as number
-		// })
-
-		const { status } = await http.local.get("/book", { responseType: "text" })
-
-		expect(status).toBe(200)
-		expect(defaultTimeout).toBe(10000)
+		try {
+			await http.get("/book").text()
+		} catch (error) {
+			expect(error.name).toMatch("TimeoutError")
+			expect(error.message).toMatch("Request timed out")
+		}
 	})
-
-	// it("Should cancel request and throw timeout error.", async () => {
-	// 	// jest.useFakeTimers()
-	// 	const http = Reqeza.create({
-	// 		local: {
-	// 			url: BASE_URL,
-	// 			timeout: 50,
-	// 		},
-	// 	})
-
-	// 	fetchMock.mockResponseOnce(
-	// 		() => new Promise((resolve) => setTimeout(() => resolve({ body: "ok" }), 200)),
-	// 	)
-
-	// 	try {
-	// 		await http.get("/book").text()
-	// 	} catch (error) {
-	// 		// expect(error).toMatch("TimeoutError: Request timed out")
-	// 	}
-	// })
 })

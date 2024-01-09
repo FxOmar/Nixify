@@ -154,17 +154,14 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 						},
 					]),
 				),
-				then(callback) {
-					return new Promise((resolve, reject) => {
-						httpAdapter(config, method, { path, responseType, ...options })
-							.then((response) => {
-								callback(response)
-								resolve(response)
-							})
-							.catch((error) => {
-								reject(error)
-							})
-					})
+				// https://javascript.plainenglish.io/the-benefit-of-the-thenable-object-in-javascript-78107b697211
+				then(...callback) {
+					return httpAdapter(config, method, { path, responseType, ...options }).then(
+						...callback,
+					)
+				},
+				catch(callback) {
+					return responseHandlers.then().catch(callback)
 				},
 			}
 
