@@ -52,32 +52,6 @@ describe("Reqeza functionalities 🚀.", () => {
 		})
 	})
 
-	it("Should calls beforeRequest before making requests.", async () => {
-		const http = Reqeza.create({
-			local: {
-				url: BASE_URL,
-			},
-		})
-
-		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), {
-			status: 200,
-			headers: {
-				"Content-Type": "application/json;charset=UTF-8",
-			},
-		})
-
-		const beforeRequestMock = jest.fn()
-
-		http.local.beforeRequest(beforeRequestMock)
-
-		await http.local.get("/book").json()
-		await http.local.get("/book", { responseType: "text" })
-		await http.local.get("/book").text()
-
-		expect(beforeRequestMock).toHaveBeenCalled()
-		expect(beforeRequestMock).toHaveBeenCalledTimes(3) // Adjust the number based on your use case
-	})
-
 	it("Should send request without timeout.", async () => {
 		const http = Reqeza.create({
 			local: {
@@ -229,6 +203,89 @@ describe("Reqeza functionalities 🚀.", () => {
 		expect(config.headers.get("Content-Type")).toMatch(
 			"application/x-www-form-urlencoded;charset=UTF-8",
 		)
+	})
+})
+
+describe("Reqeza Hooks", () => {
+	beforeAll(() => {
+		fetchMock.enableMocks()
+	})
+	beforeEach(() => {
+		fetchMock.resetMocks()
+	})
+	it("Should calls beforeRequest before making requests.", async () => {
+		const http = Reqeza.create({
+			local: {
+				url: BASE_URL,
+			},
+		})
+
+		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), {
+			status: 200,
+			headers: {
+				"Content-Type": "application/json;charset=UTF-8",
+			},
+		})
+
+		const beforeRequestMock = jest.fn()
+
+		http.local.beforeRequest(beforeRequestMock)
+
+		await http.local.get("/book").json()
+		await http.local.get("/book", { responseType: "text" })
+		await http.local.get("/book").text()
+
+		expect(beforeRequestMock).toHaveBeenCalled()
+		expect(beforeRequestMock).toHaveBeenCalledTimes(3) // Adjust the number based on your use case
+	})
+
+	it("Should call afterResponse right after making requests.", async () => {
+		const http = Reqeza.create({
+			local: {
+				url: BASE_URL,
+			},
+		})
+
+		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), {
+			status: 200,
+			headers: {
+				"Content-Type": "application/json;charset=UTF-8",
+			},
+		})
+
+		const afterResponseMock = jest.fn()
+
+		http.local.afterResponse(afterResponseMock)
+
+		await http.local.get("/book").json()
+		await http.local.get("/book", { responseType: "text" })
+		await http.local.get("/book").text()
+
+		expect(afterResponseMock).toHaveBeenCalled()
+		expect(afterResponseMock).toHaveBeenCalledTimes(3) // Adjust the number based on your use case
+	})
+
+	it("Should call afterResponse right after making requests.", async () => {
+		const http = Reqeza.create({
+			local: {
+				url: BASE_URL,
+			},
+		})
+
+		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), {
+			status: 200,
+			headers: {
+				"Content-Type": "application/json;charset=UTF-8",
+			},
+		})
+
+		http.local.afterResponse((request, response, config) => {
+			request.headers.set("Authorization", "12345")
+		})
+
+		const { config } = await http.local.get("/book").json()
+
+		expect(config.headers.get("Authorization")).toBe("12345")
 	})
 })
 

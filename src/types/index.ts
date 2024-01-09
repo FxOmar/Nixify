@@ -16,7 +16,11 @@ export type XOR<T, U> = T | U extends object
 export interface Options {
 	url: string
 	headers?: { [key: string]: string }
-	hooks?: { beforeRequest: (request: Request) => void }
+	hooks?: {
+		beforeRequest: (request: Request) => void
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		afterResponse: (request: Request, response: Response, config: any) => void
+	}
 	qs?: StringifyOptions
 	timeout?: number | false
 }
@@ -47,6 +51,7 @@ export interface RequestMethods {
 	options: RequestMethodsType
 	beforeRequest: (fn: (request: Request) => void) => void
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	afterResponse: (fn: (request: Request, response: Response, config: any) => void) => void
 	setHeaders: (newHeaders: { [key: string]: string }) => void
 }
 

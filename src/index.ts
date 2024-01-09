@@ -58,6 +58,15 @@ const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: Me
 
 	const response = await _fetch(request, _config)
 
+	// Still under development
+	if (config?.hooks?.afterResponse) {
+		delete _config.abortController
+
+		response.json = async () => json.parse(await response.clone().text())
+
+		await config.hooks.afterResponse(request, response, _config)
+	}
+
 	// non-2xx HTTP responses into errors:
 	if (!response.ok) {
 		throw new HTTPError(response.clone(), request)
@@ -199,7 +208,7 @@ const create = <T extends ServiceConfig>(config?: T) => {
 			service,
 			{
 				...createHTTPMethods(serviceConfig),
-				beforeRequest: (callback) => {
+				beforeRequest: (fn) => {
 					if (serviceConfig?.hooks?.beforeRequest) {
 						throw new TypeError(
 							"beforeRequest has already been invoked within configuration.",
@@ -207,7 +216,17 @@ const create = <T extends ServiceConfig>(config?: T) => {
 					}
 
 					serviceConfig.hooks = {}
-					serviceConfig.hooks.beforeRequest = callback
+					serviceConfig.hooks.beforeRequest = fn
+				},
+				afterResponse: (fn) => {
+					if (serviceConfig?.hooks?.afterResponse) {
+						throw new TypeError(
+							"afterResponse has already been invoked within configuration.",
+						)
+					}
+
+					serviceConfig.hooks = {}
+					serviceConfig.hooks.afterResponse = fn
 				},
 				setHeaders: (newHeaders) =>
 					setHeaders((serviceConfig.headers = serviceConfig.headers || {}), newHeaders),
@@ -217,19 +236,15 @@ const create = <T extends ServiceConfig>(config?: T) => {
 
 	const forEachInstance = (arg) => Object.values(instances).forEach(arg)
 
-	const updateHeadersAcrossInstances = (newHeaders) =>
-		forEachInstance((instance) => instance.setHeaders(newHeaders))
-
-	const beforeRequestAcrossInstances = (fn) =>
-		forEachInstance((instance) => instance.beforeRequest(fn))
-
 	const resultingInstances = isEmpty(config)
 		? { ...instances.default }
 		: {
 				...instances,
 				...instances[Object.keys(instances)[0]],
-				beforeRequest: (fn) => beforeRequestAcrossInstances(fn),
-				setHeaders: (newHeaders) => updateHeadersAcrossInstances(newHeaders),
+				beforeRequest: (fn) => forEachInstance((instance) => instance.beforeRequest(fn)),
+				afterResponse: (fn) => forEachInstance((instance) => instance.afterResponse(fn)),
+				setHeaders: (newHeaders) =>
+					forEachInstance((instance) => instance.setHeaders(newHeaders)),
 			}
 
 	return resultingInstances as XOR<ServiceReqMethods<T>, RequestMethods>
