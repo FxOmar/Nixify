@@ -14,8 +14,6 @@ declare const mergeConfigs: (config: Options, methodConfig: MethodConfig, method
     abortController: AbortController;
     path?: string;
     qs?: {
-        [name: string]: number | queryType;
-    } | {
         readonly strict?: boolean;
         readonly encode?: boolean;
         readonly arrayFormat?: "bracket" | "index" | "comma" | "separator" | "bracket-separator" | "colon-list-separator" | "none";
@@ -23,6 +21,8 @@ declare const mergeConfigs: (config: Options, methodConfig: MethodConfig, method
         readonly sort?: false | ((itemLeft: string, itemRight: string) => number);
         readonly skipNull?: boolean;
         readonly skipEmptyString?: boolean;
+    } | {
+        [name: string]: number | queryType;
     };
     json?: object;
     responseType?: ResponseType;
