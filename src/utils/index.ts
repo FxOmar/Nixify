@@ -132,7 +132,13 @@ export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method
 	methodConfig?.qs ? (base_uri.search = qs.stringify(methodConfig.qs, config?.qs)) : null
 	delete methodConfig.qs
 
-	// timeout
+	// Timeout
+	const maxSafeTimeout = Number.MAX_SAFE_INTEGER
+
+	if (typeof config.timeout === "number" && config.timeout > maxSafeTimeout) {
+		throw new RangeError(`The \`timeout\` option cannot be greater than ${maxSafeTimeout}`)
+	}
+
 	config.timeout = methodConfig.timeout ?? config.timeout ?? 10000
 
 	if (methodConfig.signal) {
