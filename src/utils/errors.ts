@@ -1,14 +1,11 @@
-import { NormalizedOptions } from "../types"
-
 /**
  *  https://github.com/sindresorhus/ky/blob/main/source/errors/HTTPError.ts
  */
 export class HTTPError extends Error {
 	public response: Response
 	public request: Request
-	public options: NormalizedOptions
 
-	constructor(response: Response, request: Request, options: NormalizedOptions) {
+	constructor(response: Response, request: Request) {
 		const code = response.status || response.status === 0 ? response.status : ""
 		const title = response.statusText || ""
 		const status = `${code} ${title}`.trim()
@@ -19,17 +16,7 @@ export class HTTPError extends Error {
 		this.name = "HTTPError"
 		this.response = response
 		this.request = request
-		this.options = options
 	}
-}
-
-export function ResponseError(response, request, config) {
-	// non-2xx HTTP responses into errors:
-	if (!response.ok) {
-		throw new HTTPError(response, request, config)
-	}
-
-	return response
 }
 
 export class TimeoutError extends Error {

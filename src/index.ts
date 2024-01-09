@@ -3,7 +3,6 @@ import type {
 	MethodConfig,
 	Options,
 	RequestMethods,
-	ResponseInterface,
 	ResponseTypes,
 	ResponseType,
 	ServiceConfig,
@@ -11,8 +10,9 @@ import type {
 	XOR,
 } from "./types"
 import { isEmpty, setHeaders, mergeConfigs, filterRequestOptions } from "./utils"
-import { ResponseError } from "./utils/errors"
 import timeout from "./utils/timeout"
+import json from "./utils/json-parse"
+import { HTTPError } from "./utils/errors"
 
 // All the HTTP request methods.
 const methods = ["get", "head", "put", "delete", "post", "patch", "options"] as const
@@ -61,42 +61,65 @@ const _fetch = async (request: Request, config) => {
  *
  * @returns {Promise<ResponseInterface>}
  */
-const httpAdapter = async <R>(config: Options, method: HttpMethod, methodConfig: MethodConfig) => {
+const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: MethodConfig) => {
 	const _config = mergeConfigs(config, methodConfig, method)
 	const requestConfig = __requestConfig(_config)
 
-	return _fetch(requestConfig, _config)
-		.then((res) => ResponseError(res, requestConfig, _config))
-		.then(async (res) => {
-			// Response Schema
-			const response: Partial<ResponseInterface<R>> = {
-				headers: res.headers,
-				status: res.status,
-				statusText: res.statusText,
-				config: requestConfig,
+	const response = await _fetch(requestConfig, _config)
+
+	// non-2xx HTTP responses into errors:
+	if (!response.ok) {
+		throw new HTTPError(response.clone(), requestConfig)
+	}
+
+	// Response Schema
+	const _response = {
+		data: null,
+		headers: response.headers,
+		status: response.status,
+		statusText: response.statusText,
+		config: requestConfig,
+	}
+
+	const awaitedResponse = response.clone()
+
+	const parseResponse = async () => {
+		if (_config.responseType === "json") {
+			// https://datatracker.ietf.org/doc/html/rfc2616#section-10.2.5
+			if (response.status === 204) return ""
+
+			// https://github.com/sindresorhus/ky/blob/38ac18bc1ac3268130de766891ce9b718eb8145a/source/core/Ky.ts#L94-L98
+			const arrayBuffer = await awaitedResponse.clone().arrayBuffer()
+			const responseSize = arrayBuffer.byteLength
+
+			if (responseSize === 0) {
+				return ""
 			}
 
-			// Validate and handle responseType
-			if (_config.responseType) {
-				try {
-					response.data = await res[_config.responseType]()
-				} catch (error) {
-					// Handle parsing error for the specified responseType
-					throw new Error(
-						`Unsupported response type "${
-							_config.responseType
-						}" specified in the request. The Content-Type of the response is "${res.headers.get(
-							"Content-Type",
-						)}".`,
-					)
-				}
-			} else {
-				// If no responseType is specified, default to "json"
-				response.data = await res.json()
-			}
+			// JSON.parse() replacement with prototype poisoning protection.
+			return json.parse(await awaitedResponse.text())
+		}
 
-			return response
-		})
+		return await awaitedResponse[_config.responseType]()
+	}
+
+	// Validate and handle responseType
+	if (_config.responseType) {
+		try {
+			_response.data = await parseResponse()
+		} catch (error) {
+			// Handle parsing error for the specified responseType
+			throw new Error(
+				`Unsupported response type "${
+					_config.responseType
+				}" specified in the request. The Content-Type of the response is "${response.headers.get(
+					"Content-Type",
+				)}".`,
+			)
+		}
+	}
+
+	return _response
 }
 
 const createHTTPMethods = (config?: Options): RequestMethods => {
@@ -113,8 +136,8 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 				setHeaders(config?.headers, { Authorization: `Basic ${encodedToken}` })
 			}
 
-			// Set responseType from method options
-			let responseType = options?.responseType
+			// If no responseType is specified, default to "json"
+			let responseType = options?.responseType || "json"
 
 			const responseHandlers = {
 				...Object.fromEntries(
