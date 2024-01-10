@@ -20,7 +20,7 @@ describe("Nixify functionalities 🚀.", () => {
 				url: BASE_URL,
 			},
 			github: {
-				url: "https://gitlab.com/api/v4/",
+				url: "https://gitlab.com/api/v4",
 			},
 		})
 

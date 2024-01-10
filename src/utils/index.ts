@@ -108,7 +108,11 @@ export const filterRequestOptions = (requestOptions) => {
 }
 
 export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method: HttpMethod) => {
-	const base_uri = new URL(methodConfig.path, config?.url ?? undefined)
+	const url = config.url ? `${config.url}/`.replace(/\/+$/, "/") : undefined
+	const path = methodConfig.path.replace(/^\//, "")
+
+	const base_uri = new URL(path, url)
+
 	const abortController = new AbortController()
 	let headersConfig = new Headers({
 		...config?.headers,
