@@ -204,6 +204,43 @@ describe("Nixify functionalities 🚀.", () => {
 			"application/x-www-form-urlencoded;charset=UTF-8",
 		)
 	})
+	it("retryOn hook triggers retry on 4xx or 5xx status codes", async () => {
+		const http = Nixify.create({
+			local: {
+				url: BASE_URL,
+				timeout: false,
+				retryConfig: {
+					retryDelay: 100,
+				},
+			},
+		})
+
+		fetchMock.mockResponse(null, { status: 401 })
+
+		const retryOnMock = jest.fn((attempt, response) => {
+			if (attempt > 3) return false
+
+			// retry on 4xx or 5xx status codes
+			if (response.status >= 400) {
+				return true
+			}
+		})
+
+		try {
+			await http.get("/book", {
+				retry: {
+					retryOn: retryOnMock,
+				},
+			})
+
+			expect(retryOnMock).toHaveBeenCalled()
+			expect(retryOnMock).toHaveBeenCalledTimes(4)
+		} catch (error) {
+			expect(error).toBeInstanceOf(HTTPError)
+			expect(error.name).toMatch("HTTPError")
+			expect(error.message).toMatch("Request failed with status code 401 Unauthorized")
+		}
+	})
 })
 
 describe("Nixify Hooks", () => {
@@ -236,7 +273,7 @@ describe("Nixify Hooks", () => {
 		await http.local.get("/book").text()
 
 		expect(beforeRequestMock).toHaveBeenCalled()
-		expect(beforeRequestMock).toHaveBeenCalledTimes(3) // Adjust the number based on your use case
+		expect(beforeRequestMock).toHaveBeenCalledTimes(3)
 	})
 
 	it("Should call afterResponse right after making requests.", async () => {
@@ -262,30 +299,65 @@ describe("Nixify Hooks", () => {
 		await http.local.get("/book").text()
 
 		expect(afterResponseMock).toHaveBeenCalled()
-		expect(afterResponseMock).toHaveBeenCalledTimes(3) // Adjust the number based on your use case
+		expect(afterResponseMock).toHaveBeenCalledTimes(3)
 	})
 
-	it("Should call afterResponse right after making requests.", async () => {
+	it("afterResponse set requests header right after retry.", async () => {
 		const http = Nixify.create({
 			local: {
 				url: BASE_URL,
+				retryConfig: {
+					retries: 3,
+					retryOn: [401],
+					retryDelay: 0,
+				},
 			},
 		})
 
-		fetchMock.mockResponseOnce(JSON.stringify({ data: "12345" }), {
+		fetchMock.mockResponseOnce(null, { status: 401 })
+		fetchMock.mockResponseOnce(JSON.stringify({ token: "12345" }), { status: 200 })
+		fetchMock.mockResponseOnce(JSON.stringify({ book: "The new way of life" }), {
 			status: 200,
-			headers: {
-				"Content-Type": "application/json;charset=UTF-8",
-			},
 		})
 
-		http.local.afterResponse((request) => {
-			request.headers.set("Authorization", "12345")
+		http.local.afterResponse(async (req, res) => {
+			if (res.status === 401) {
+				const { data } = await http.get("/token")
+
+				req.headers.set("Authorization", data.token)
+			}
 		})
 
 		const { config } = await http.local.get("/book").json()
 
 		expect(config.headers.get("Authorization")).toBe("12345")
+	})
+
+	it("beforeRetry hook is called.", async () => {
+		const http = Nixify.create({
+			local: {
+				url: BASE_URL,
+				timeout: false,
+				retryConfig: {
+					retries: 3,
+					retryDelay: 100,
+				},
+			},
+		})
+
+		fetchMock.mockResponseOnce(null, { status: 413 })
+		fetchMock.mockResponseOnce(null, { status: 500 })
+		fetchMock.mockResponseOnce(null, { status: 408 })
+		fetchMock.mockResponseOnce(null, { status: 200 })
+
+		const beforeRetryMock = jest.fn()
+
+		http.beforeRetry(beforeRetryMock)
+
+		await http.get("/book")
+
+		expect(beforeRetryMock).toHaveBeenCalled()
+		expect(beforeRetryMock).toHaveBeenCalledTimes(3)
 	})
 })
 

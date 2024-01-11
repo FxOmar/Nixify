@@ -27,27 +27,17 @@ import Nixify from "nixify";
 
 ## Nixify Features
 
-- **Tiny and Lightweight**: Nixify is designed as a minimalistic HTTP client with a focus on simplicity and a small package size.
-
-- **First-class TypeScript Support**: Developed entirely in TypeScript, ensuring a seamless and robust experience for TypeScript users.
-
-- **Fetch API Integration**: Built on top of the browser's Fetch API, leveraging its capabilities for making HTTP requests.
-
-- **Methods Shortcut**: Utilize shorthand methods for common tasks, such as `*Nixify.get().text()*`, to enhance code readability.
-
-- **Service Configuration**: Easily configure and create instances for different services.
-
-- **Header Management**: Set headers globally or for specific service instances. Modify headers before making requests, providing flexibility for customization.
-
-- **Hooks**: Leverage the `afterResponse` and `beforeRequest` hooks for executing functions before requesting global and service-specific instances. Modify request headers or perform other actions.
-
-- **Concise API**: Provides a straightforward and easy-to-use API for handling HTTP requests without unnecessary complexity.
-
-- **Automatic Transforms for JSON Data**: Enjoy automatic handling of JSON data, simplifying the interaction with APIs that return JSON responses. Protects against prototype poisoning.
-
-- **Cancel Requests**: Efficiently manage ongoing requests with the ability to cancel them as needed.
-
-
+- **Lightweight**: Minimalistic HTTP client designed for simplicity.
+- **First-class TypeScript Support**: Developed entirely in TypeScript for a robust experience.
+- **Fetch API Integration**: Built on the browser's Fetch API for HTTP requests.
+- **Shortcut Methods**: Shorthand methods like `Nixify.get().text()` for readability.
+- **Retry Request**: automatic retry of failed requests based on status codes.
+- **Configurable Services**: Easily configure instances for different services.
+- **Header Management**: Set headers globally or for specific instances.
+- **Hooks**: Execute functions before/after requests, with a `beforeRetry` hook.
+- **Automatic JSON Handling**: Streamlined interaction with JSON responses.
+- **Cancel Requests**: Efficiently manage ongoing requests.
+- **Concise API**: Simple and easy-to-use for handling HTTP requests.
 
 ## Usage
 
@@ -62,7 +52,12 @@ const http = Nixify.create({
   },
   gitlab: {
     url: "https://gitlab.com/api/v4",
-    headers: {},
+	retryConfig: {
+		retries: 4,
+		retryOn: [400] // default statusCodes retryOn [408, 413, 429, 500, 502, 503, 504]
+		retryDelay: 2000 // ms
+	}
+
   },
 });
 
@@ -82,9 +77,29 @@ http.beforeRequest((request, config) => {
   request.headers.set("Content-type", "application/json");
 });
 
-// Still under development (WIP)
+// Will be called right after response
 http.gitlab.afterResponse((request, response config) => {});
 http.afterResponse((request, response config) => {});
+
+// Will be called right before retry
+http.beforeRetry((request, response, attempt, delay) => {});
+http.gitlab.beforeRetry((request, response, attempt, delay) => {});
+
+const { data, status } = await http.gitlab.get("/projects/:id/registry/repositories", {
+	retry: {
+		//  Retry custom behavior
+		retryOn(attempt, response) {
+			// Should stop retry by returning false
+			if (attempt > 3) return false
+
+			// retry on 4xx or 5xx status codes
+			if (response.status >= 400) {
+				console.log(`retrying, attempt number ${attempt + 1}`);
+				return true;
+			}
+		}
+	}
+}).json();
 
 // TypeScript Version
 interface Repositories {}
