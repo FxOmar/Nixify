@@ -10,5 +10,8 @@ declare class TimeoutError extends Error {
     request: Request;
     constructor(request: Request);
 }
+declare class ArgumentError extends Error {
+    constructor(message: any);
+}
 
-export { HTTPError, TimeoutError };
+export { ArgumentError, HTTPError, TimeoutError };
