@@ -30,6 +30,11 @@ const _request = (config): Request => {
 		throw new TypeError(`Unsupported protocol, ${config.url.protocol}`)
 	}
 
+	// if .json() is set by default add Accept header
+	config.responseType === "json" && !config.headers.has("Accept")
+		? config.headers.set("Accept", responseTypes.json)
+		: undefined
+
 	const request = filterRequestOptions(config)
 
 	return new Request(config.url.toString(), request)
