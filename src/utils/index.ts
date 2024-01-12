@@ -1,11 +1,16 @@
 import type { HttpMethod, MethodConfig, Options } from "../types"
+import { ArgumentError } from "./errors"
 import { qs } from "./qs"
 
-export function isEmpty(target) {
+export const isEmpty = (target) => {
 	return target === null || target === undefined || Object.keys(target).length === 0
 }
 
-export function mergeHeaders(baseHeaders: Headers, additionalHeaders: HeadersInit): Headers {
+export const isPositiveInteger = (value) => {
+	return Number.isInteger(value) && value >= 0
+}
+
+export const mergeHeaders = (baseHeaders: Headers, additionalHeaders: HeadersInit): Headers => {
 	const mergedHeaders = new Headers(baseHeaders)
 
 	if (additionalHeaders instanceof Headers) {
@@ -136,7 +141,7 @@ export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method
 	methodConfig?.qs ? (base_uri.search = qs.stringify(methodConfig.qs, config?.qs)) : null
 	delete methodConfig.qs
 
-	// Timeout
+	// Timeout option
 	const maxSafeTimeout = Number.MAX_SAFE_INTEGER
 
 	if (typeof config.timeout === "number" && config.timeout > maxSafeTimeout) {
@@ -145,6 +150,50 @@ export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method
 
 	config.timeout = methodConfig.timeout ?? config.timeout ?? 10000
 
+	// Retry option
+	const baseDefaults = {
+		retries: 3,
+		retryDelay: 1000,
+		retryOn: [408, 413, 429, 500, 502, 503, 504],
+	}
+
+	config.retryConfig = config.retryConfig || {}
+
+	config.retryConfig = Object.assign(baseDefaults, config.retryConfig)
+
+	const { retry } = methodConfig
+
+	if (retry) {
+		const { retries, retryDelay, retryOn } = retry
+
+		if (retries !== undefined) {
+			if (isPositiveInteger(retries)) {
+				config.retryConfig.retries = retries
+			} else {
+				throw new ArgumentError("retries must be a positive integer")
+			}
+		}
+
+		if (retryDelay !== undefined) {
+			if (isPositiveInteger(retryDelay) || typeof retryDelay === "function") {
+				config.retryConfig.retryDelay = retryDelay
+			} else {
+				throw new ArgumentError(
+					"retryDelay must be a positive integer or a function returning a positive integer",
+				)
+			}
+		}
+
+		if (retryOn) {
+			if (Array.isArray(retryOn) || typeof retryOn === "function") {
+				config.retryConfig.retryOn = retryOn
+			} else {
+				throw new ArgumentError("retryOn property expects an array or function")
+			}
+		}
+	}
+
+	// Cancellation
 	if (methodConfig.signal) {
 		if (!(methodConfig.signal instanceof AbortSignal))
 			throw new TypeError(

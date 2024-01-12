@@ -28,3 +28,10 @@ export class TimeoutError extends Error {
 		this.request = request
 	}
 }
+
+export class ArgumentError extends Error {
+	constructor(message) {
+		super(message)
+		this.name = "ArgumentError"
+	}
+}

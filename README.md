@@ -27,27 +27,17 @@ import Nixify from "nixify";
 
 ## Nixify Features
 
-- **Tiny and Lightweight**: Nixify is designed as a minimalistic HTTP client with a focus on simplicity and a small package size.
-
-- **First-class TypeScript Support**: Developed entirely in TypeScript, ensuring a seamless and robust experience for TypeScript users.
-
-- **Fetch API Integration**: Built on top of the browser's Fetch API, leveraging its capabilities for making HTTP requests.
-
-- **Methods Shortcut**: Utilize shorthand methods for common tasks, such as `*Nixify.get().text()*`, to enhance code readability.
-
-- **Service Configuration**: Easily configure and create instances for different services.
-
-- **Header Management**: Set headers globally or for specific service instances. Modify headers before making requests, providing flexibility for customization.
-
-- **Hooks**: Leverage the `afterResponse` and `beforeRequest` hooks for executing functions before requesting global and service-specific instances. Modify request headers or perform other actions.
-
-- **Concise API**: Provides a straightforward and easy-to-use API for handling HTTP requests without unnecessary complexity.
-
-- **Automatic Transforms for JSON Data**: Enjoy automatic handling of JSON data, simplifying the interaction with APIs that return JSON responses. Protects against prototype poisoning.
-
-- **Cancel Requests**: Efficiently manage ongoing requests with the ability to cancel them as needed.
-
-
+- **Lightweight**: Minimalistic HTTP client designed for simplicity.
+- **First-class TypeScript Support**: Developed entirely in TypeScript for a robust experience.
+- **Fetch API Integration**: Built on the browser's Fetch API for HTTP requests.
+- **Shortcut Methods**: Shorthand methods like `Nixify.get().text()` for readability.
+- **Retry Request**: automatic retry of failed requests based on status codes.
+- **Configurable Services**: Easily configure instances for different services.
+- **Header Management**: Set headers globally or for specific instances.
+- **Hooks**: Execute functions before/after requests, with a `beforeRetry` hook.
+- **Automatic JSON Handling**: Streamlined interaction with JSON responses.
+- **Cancel Requests**: Efficiently manage ongoing requests.
+- **Concise API**: Simple and easy-to-use for handling HTTP requests.
 
 ## Usage
 
@@ -62,7 +52,12 @@ const http = Nixify.create({
   },
   gitlab: {
     url: "https://gitlab.com/api/v4",
-    headers: {},
+	retryConfig: {
+		retries: 4,
+		retryOn: [400] // default statusCodes retryOn [408, 413, 429, 500, 502, 503, 504]
+		retryDelay: 2000 // ms
+	}
+
   },
 });
 
@@ -82,9 +77,30 @@ http.beforeRequest((request, config) => {
   request.headers.set("Content-type", "application/json");
 });
 
-// Still under development (WIP)
+// Will be called right after response
 http.gitlab.afterResponse((request, response config) => {});
 http.afterResponse((request, response config) => {});
+
+// Will be called right before retry
+http.beforeRetry((request, response, attempt, delay) => {});
+http.gitlab.beforeRetry((request, response, attempt, delay) => {});
+
+
+// Retry custom behavior
+const { data, status } = await http.gitlab.get("/projects/:id/registry/repositories", {
+	retry: {
+		retryOn(attempt, response) {
+			// Should stop retry by returning false
+			if (attempt > 3) return false
+
+			// retry on 4xx or 5xx status codes
+			if (response.status >= 400) {
+				console.log(`retrying, attempt number ${attempt + 1}`);
+				return true;
+			}
+		}
+	}
+}).json();
 
 // TypeScript Version
 interface Repositories {}
@@ -174,9 +190,9 @@ const http = Nixify.create({
 Prior to initiating a request for a particular service instance or globally, customize request headers or execute additional actions.
 
 ##### Parameters:
-
-- `request`: A representation of the Request API, encapsulating HTTP configurations.
-- `config`: An object with `NixifyInstance` configurations.
+- `fn`: A callback function to be invoked right before a request.
+	- `request`: A representation of the Request API, encapsulating HTTP configurations.
+	- `config`: An object with `NixifyInstance` configurations.
 
 ##### Example:
 
@@ -196,10 +212,10 @@ http.beforeRequest((request, config) => {
  Still under development.
 
 ##### Parameters:
-
-- `request`: A representation of the Request API, encapsulating HTTP configurations.
-- `response`: A representation of the Response API.
-- `config`: An object with `NixifyInstance` configurations.
+- `fn`: A callback function to be invoked right after a response.
+	- `request`: A representation of the Request API, encapsulating HTTP configurations.
+	- `response`: A representation of the Response API.
+	- `config`: An object with `NixifyInstance` configurations.
 
 ##### Example:
 
@@ -207,6 +223,37 @@ http.beforeRequest((request, config) => {
 http.gitlab.afterResponse((request, config) => {});
 http.afterResponse((request, config) => {});
 ```
+##### `Nixify.beforeRetry(fn: (request: Request, response: Response, attempt: number, delay: number) => void)`
+##### `Nixify.{service}.beforeRetry(fn: (request: Request, response: Response, attempt: number, delay: number) => void)`
+
+Registers a function to be executed before a fetch retry attempt within the Nixify service.
+
+#### Parameters:
+
+- `fn`: A callback function to be invoked before a retry attempt.
+  - `request`: A representation of the Request API, encapsulating HTTP configurations.
+  - `response`: A representation of the Response API.
+  - `attempt`: The number of the retry attempt.
+  - `delay`: The delay before the next retry attempt.
+
+#### Example:
+
+```typescript
+http.beforeRetry((request, response, attempt, delay) => {
+  if(response.status === 401) {
+	const { data } = await http.get("/refresh-token").json()
+
+	request.headers.set("X-API-KEY", data.token)
+  }
+});
+
+http.{service}.beforeRetry((request, response, attempt, delay) => {
+  // Your logic here
+});
+```
+
+This method allows you to register a callback function that will be called before each retry attempt within the Nixify service. The callback function receives information about the request, response, the current attempt number, and the delay before the next retry.
+
 ##### `Nixify.setHeaders(headers: { [key: string]: string })`
 ##### `Nixify.{service}.setHeaders(headers: { [key: string]: string })`
 Before making a request for a specific service instance or globally, modify request headers.
@@ -257,8 +304,33 @@ http.patch(url[, body or json])
 interface Options {
   url: string
   headers?: { [key: string]: string }
-  hooks?: { beforeRequest: (request: Request, config: Options) => void }
-  qs?: StringifyOptions
+  hooks?: {
+	beforeRequest: (request: Request) => void
+	afterResponse: (request: Request, response: Response, config: any) => void
+	beforeRetry: (request: Request, response: Response, attempt: number, delay: number) => void
+  }
+  qs?: {
+	readonly strict?: boolean
+	readonly encode?: boolean
+	readonly arrayFormat?:
+		| "bracket"
+		| "index"
+		| "comma"
+		| "separator"
+		| "bracket-separator"
+		| "colon-list-separator"
+		| "none"
+	readonly arrayFormatSeparator?: string
+	readonly sort?: ((itemLeft: string, itemRight: string) => number) | false
+	readonly skipNull?: boolean
+	readonly skipEmptyString?: boolean
+  }
+  timeout?: number | false
+  retryConfig?: {
+	retries?: number | boolean
+	retryDelay?: number | (attempt: number, response: Response | null) => number
+	retryOn?: number[] | (attempt: number, response: Response | null) => boolean | Promise<boolean> 
+  }
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#options
@@ -280,8 +352,12 @@ interface MethodConfig extends Omit<RequestInit, "method"> {
     | ReadableStream;
   // `responseType` indicates the type of data that the server will respond with.
   responseType?: "json" | "text" | "blob" | "arrayBuffer" | "formData";
-  //   hooks?: { beforeRequest: (request: Request) => void };
-  auth?: { username: string; password: string }
+  timeout?: number | false
+  retry?: {
+	retries?: number | boolean
+	retryDelay?: number | (attempt: number, response: Response | null) => number
+	retryOn?: number[] | (attempt: number, response: Response | null) => boolean | Promise<boolean> 
+  }
   // To cancel request using AbortController
   signal?: AbortController;
 }

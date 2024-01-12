@@ -13,6 +13,19 @@ export type XOR<T, U> = T | U extends object
 	? (T & Record<string, never>) | (U & Record<string, never>)
 	: T | U
 
+type RequestDelayFunction = (attempt: number, response: Response | null) => number
+
+type RequestRetryOnFunction = (
+	attempt: number,
+	response: Response | null,
+) => boolean | Promise<boolean>
+
+export interface RequestInitRetryParams {
+	retries?: number | boolean
+	retryDelay?: number | RequestDelayFunction
+	retryOn?: number[] | RequestRetryOnFunction
+}
+
 export interface Options {
 	url: string
 	headers?: { [key: string]: string }
@@ -20,9 +33,21 @@ export interface Options {
 		beforeRequest: (request: Request) => void
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		afterResponse: (request: Request, response: Response, config: any) => void
+		beforeRetry: (request: Request, response: Response, attempt: number, delay: number) => void
 	}
 	qs?: StringifyOptions
 	timeout?: number | false
+	retryConfig?: RequestInitRetryParams
+}
+
+export interface MethodConfig extends Omit<RequestInit, "method"> {
+	path?: string
+	qs?: { [name: string]: queryType | number } // Object of queries.
+	json?: object
+	responseType?: ResponseType
+	timeout?: number | false
+	retry?: RequestInitRetryParams
+	//   hooks?: { beforeRequest: (request: Request) => void };
 }
 
 export type ServiceConfig = { [key: string]: Options }
@@ -52,6 +77,9 @@ export interface RequestMethods {
 	beforeRequest: (fn: (request: Request) => void) => void
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	afterResponse: (fn: (request: Request, response: Response, config: any) => void) => void
+	beforeRetry: (
+		fn: (request: Request, response: Response, attempt: number, delay: number) => void,
+	) => void
 	setHeaders: (newHeaders: { [key: string]: string }) => void
 }
 
@@ -65,16 +93,6 @@ export interface ResponseInterface<T> {
 	status: number
 	statusText: string
 	config: Request
-}
-
-export interface MethodConfig extends Omit<RequestInit, "method"> {
-	path?: string
-	qs?: { [name: string]: queryType | number } // Object of queries.
-	json?: object
-	responseType?: ResponseType
-	timeout?: number | false
-	//   hooks?: { beforeRequest: (request: Request) => void };
-	// auth?: boolean | { username: string; password: string }
 }
 
 export type queryType = string | URLSearchParams | Record<string, string> | string[][]

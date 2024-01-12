@@ -10,9 +10,9 @@ import type {
 	XOR,
 } from "./types"
 import { isEmpty, setHeaders, mergeConfigs, filterRequestOptions } from "./utils"
-import timeout from "./utils/timeout"
 import json from "./utils/json-parse"
 import { HTTPError } from "./utils/errors"
+import fetchRetry from "./core/fetchRetry"
 
 // All the HTTP request methods.
 const methods = ["get", "head", "put", "delete", "post", "patch", "options"] as const
@@ -35,18 +35,6 @@ const _request = (config): Request => {
 	return new Request(config.url.toString(), request)
 }
 
-const _fetch = async (request: Request, config) => {
-	if (config?.hooks?.beforeRequest) {
-		await config.hooks.beforeRequest(request)
-	}
-
-	if (config.timeout === false) {
-		return await fetch(request.clone())
-	}
-
-	return timeout(request.clone(), config.abortController, config.timeout)
-}
-
 /**
  * HttpAdapter make http requests 🦅.
  *
@@ -56,16 +44,7 @@ const httpAdapter = async (config: Options, method: HttpMethod, methodConfig: Me
 	const _config = mergeConfigs(config, methodConfig, method)
 	const request = _request(_config)
 
-	const response = await _fetch(request, _config)
-
-	// Still under development
-	if (config?.hooks?.afterResponse) {
-		delete _config.abortController
-
-		response.json = async () => json.parse(await response.clone().text())
-
-		await config.hooks.afterResponse(request, response, _config)
-	}
+	const response = await fetchRetry(request, _config)
 
 	// non-2xx HTTP responses into errors:
 	if (!response.ok) {
@@ -165,6 +144,41 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 }
 
 /**
+ * Creates hooks for a configuration object.
+ *
+ * @param {Object} config - The configuration object.
+ * @returns {Object} An object containing hooks methods.
+ * @throws {TypeError} Throws an error if a hook has already been invoked within the configuration.
+ *
+ * @example
+ * const serviceConfig = {};
+ * const myHooks = createHooks(serviceConfig);
+ */
+const createHooks = (config: Options) => {
+	/**
+	 * @type {string[]}
+	 * Array of supported hook names.
+	 */
+	const hooks = ["beforeRetry", "afterResponse", "beforeRequest"]
+
+	return Object.fromEntries(
+		hooks.map((hookName) => [
+			hookName,
+			(fn) => {
+				if (config?.hooks?.[hookName]) {
+					throw new TypeError(
+						`${hookName} has already been invoked within configuration.`,
+					)
+				}
+
+				// Ensure that config.hooks is defined before accessing its properties
+				Object.assign(config, { hooks: { ...(config.hooks || {}), [hookName]: fn } })
+			},
+		]),
+	)
+}
+
+/**
  * Factory function for creating an HTTP client with configurable service instances.
  *
  * @function create
@@ -208,26 +222,7 @@ const create = <T extends ServiceConfig>(config?: T) => {
 			service,
 			{
 				...createHTTPMethods(serviceConfig),
-				beforeRequest: (fn) => {
-					if (serviceConfig?.hooks?.beforeRequest) {
-						throw new TypeError(
-							"beforeRequest has already been invoked within configuration.",
-						)
-					}
-
-					serviceConfig.hooks = {}
-					serviceConfig.hooks.beforeRequest = fn
-				},
-				afterResponse: (fn) => {
-					if (serviceConfig?.hooks?.afterResponse) {
-						throw new TypeError(
-							"afterResponse has already been invoked within configuration.",
-						)
-					}
-
-					serviceConfig.hooks = {}
-					serviceConfig.hooks.afterResponse = fn
-				},
+				...createHooks(serviceConfig),
 				setHeaders: (newHeaders) =>
 					setHeaders((serviceConfig.headers = serviceConfig.headers || {}), newHeaders),
 			},
@@ -243,6 +238,7 @@ const create = <T extends ServiceConfig>(config?: T) => {
 				...instances[Object.keys(instances)[0]],
 				beforeRequest: (fn) => forEachInstance((instance) => instance.beforeRequest(fn)),
 				afterResponse: (fn) => forEachInstance((instance) => instance.afterResponse(fn)),
+				beforeRetry: (fn) => forEachInstance((instance) => instance.beforeRetry(fn)),
 				setHeaders: (newHeaders) =>
 					forEachInstance((instance) => instance.setHeaders(newHeaders)),
 			}

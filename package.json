@@ -1,6 +1,6 @@
 {
   "name": "nixify",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "Nixify is a tiny JavaScript HTTP client based on browser Fetch API.",
   "type": "module",
   "module": "@Nixify/index.js",
