@@ -47,6 +47,9 @@ export interface MethodConfig extends Omit<RequestInit, "method"> {
 	responseType?: ResponseType
 	timeout?: number | false
 	retry?: RequestInitRetryParams
+	// "/groups/:id/registry/repositories" - { id: 4873 }
+	// "/groups/4873/registry/repositories"
+	params?: { [key: string]: string | number }
 	//   hooks?: { beforeRequest: (request: Request) => void };
 }
 

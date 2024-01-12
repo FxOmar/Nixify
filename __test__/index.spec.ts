@@ -241,6 +241,24 @@ describe("Nixify functionalities 🚀.", () => {
 			expect(error.message).toMatch("Request failed with status code 401 Unauthorized")
 		}
 	})
+
+	it("should replace dynamic parameters in the path and return the modified URL", async () => {
+		const baseUrl = "https://example.com"
+
+		const http = Nixify.create({
+			local: {
+				url: baseUrl,
+				timeout: false,
+			},
+		})
+
+		const path = "/groups/:id/registry/:name/repositories"
+		const params = { id: 123, name: "example" }
+
+		const { config } = await http.get(path, { params })
+
+		expect(config.url).toBe(`${baseUrl}/groups/123/registry/example/repositories`)
+	})
 })
 
 describe("Nixify Hooks", () => {
@@ -446,6 +464,28 @@ describe("Error handling ❌", () => {
 			expect(error).toBeInstanceOf(TypeError)
 			expect(error.message).toMatch(
 				'Unsupported response type "formData" specified in the request. The Content-Type of the response is "application/json;".',
+			)
+		}
+	})
+
+	it("should throw an error for duplicated parameter names in params", async () => {
+		const baseUrl = "https://example.com"
+
+		const http = Nixify.create({
+			local: {
+				url: baseUrl,
+				timeout: false,
+			},
+		})
+
+		const path = "/groups/:id/registry/:id/repositories"
+		const params = { id: 123 }
+
+		try {
+			await http.get(path, { params })
+		} catch (error) {
+			expect(error.message).toBe(
+				`Found duplicated params with name "id" or path "groups/:id/registry/:id/repositories". Only the last one will be available.`,
 			)
 		}
 	})

@@ -9,6 +9,7 @@ const config: Config = {
 	// An array of file extensions your modules use
 	moduleFileExtensions: ["js", "ts"],
 	testEnvironment: "node",
+	coveragePathIgnorePatterns: ["/node_modules/", "/__test__/"],
 }
 
 export default config
