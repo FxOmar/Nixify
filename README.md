@@ -34,6 +34,7 @@ import Nixify from "nixify";
 - **Retry Request**: automatic retry of failed requests based on status codes.
 - **Configurable Services**: Easily configure instances for different services.
 - **Header Management**: Set headers globally or for specific instances.
+- **Dynamic Route Matching with Params**: Support for dynamic route matching with parameters.
 - **Hooks**: Execute functions before/after requests, with a `beforeRetry` hook.
 - **Automatic JSON Handling**: Streamlined interaction with JSON responses.
 - **Cancel Requests**: Efficiently manage ongoing requests.
@@ -88,6 +89,7 @@ http.gitlab.beforeRetry((request, response, attempt, delay) => {});
 
 // Retry custom behavior
 const { data, status } = await http.gitlab.get("/projects/:id/registry/repositories", {
+	params: { id: 5645 } // /projects/5645/registry/repositories
 	retry: {
 		retryOn(attempt, response) {
 			// Should stop retry by returning false
@@ -338,6 +340,9 @@ interface MethodConfig extends Omit<RequestInit, "method"> {
   // URL parameters to be sent with the request
   // (e.g http.get(path, { qs: { name: "Joe" } }) = path?name=Joe )
   qs?: { [name: string]: string | URLSearchParams | Record<string, string> | string[][] }
+  // "/groups/:id/registry/repositories" - { id: 4873 }
+  // "/groups/4873/registry/repositories"
+  params?: { [key: string]: string | number }
   // `headers` are custom headers to be sent.
   headers?: Object;
   // `json` to send body as Content-Type JSON.

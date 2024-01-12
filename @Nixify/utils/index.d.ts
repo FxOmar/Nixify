@@ -1,7 +1,8 @@
-import { Options, MethodConfig, HttpMethod, queryType, ResponseType } from '../types/index.js';
+import { Options, MethodConfig, HttpMethod, queryType, ResponseType, RequestInitRetryParams } from '../types/index.js';
 
-declare function isEmpty(target: any): boolean;
-declare function mergeHeaders(baseHeaders: Headers, additionalHeaders: HeadersInit): Headers;
+declare const isEmpty: (target: any) => boolean;
+declare const isPositiveInteger: (value: any) => boolean;
+declare const mergeHeaders: (baseHeaders: Headers, additionalHeaders: HeadersInit) => Headers;
 declare const processHeaders: (headers: any) => any;
 declare const setHeaders: (target: any, newHeaders: any) => void;
 declare const filterRequestOptions: (requestOptions: any) => {};
@@ -26,6 +27,10 @@ declare const mergeConfigs: (config: Options, methodConfig: MethodConfig, method
     };
     json?: object;
     responseType?: ResponseType;
+    retry?: RequestInitRetryParams;
+    params?: {
+        [key: string]: string | number;
+    };
     body?: BodyInit;
     cache?: RequestCache;
     credentials?: RequestCredentials;
@@ -39,7 +44,9 @@ declare const mergeConfigs: (config: Options, methodConfig: MethodConfig, method
     hooks?: {
         beforeRequest: (request: Request) => void;
         afterResponse: (request: Request, response: Response, config: any) => void;
+        beforeRetry: (request: Request, response: Response, attempt: number, delay: number) => void;
     };
+    retryConfig?: RequestInitRetryParams;
 };
 
-export { filterRequestOptions, isEmpty, mergeConfigs, mergeHeaders, processHeaders, setHeaders };
+export { filterRequestOptions, isEmpty, isPositiveInteger, mergeConfigs, mergeHeaders, processHeaders, setHeaders };

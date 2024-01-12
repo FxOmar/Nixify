@@ -1,6 +1,6 @@
 import Nixify from "../src/index"
 
-import { startServer } from "./testing-server"
+import { startServer } from "./mock/testing-server"
 
 const BASE_URL = "http://localhost:3001"
 

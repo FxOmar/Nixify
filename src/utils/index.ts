@@ -112,11 +112,68 @@ export const filterRequestOptions = (requestOptions) => {
 	return filteredOptions
 }
 
+/**
+ * Replaces dynamic parameters in a path with the provided values and constructs a URL.
+ *
+ * @param {string | undefined} baseUrl - The base URL to prepend to the path. If undefined, the path is used as the full URL.
+ * @param {string} path - The path containing dynamic parameters indicated by colons (e.g., "/groups/:id/registry/repositories").
+ * @param {Object.<string, string | number>} params - An object containing values to replace dynamic parameters in the path.
+ * @returns {string} The constructed URL with replaced parameters.
+ *
+ * @example
+ * const baseUrl = "https://example.com";
+ * const path = "/groups/:id/registry/repositories";
+ * const params = { id: 123 };
+ * const newUrl = replaceUrlParams(baseUrl, path, params);
+ */
+const replaceUrlParams = (
+	baseUrl: string | undefined,
+	path: string,
+	params: { [key: string]: string | number },
+) => {
+	const seenParams = new Set<string>()
+	const paramNamePattern = /^[a-zA-Z][a-zA-Z0-9_]*$/
+
+	// Split dynamic parameters in the path
+	const pathParams = (path.match(/:[a-zA-Z0-9_]+/g) || []).map((param) => param.slice(1))
+
+	// Check for duplicated parameters in the path
+	const uniquePathParams = new Set(pathParams)
+
+	// Replace dynamic parameters in the path
+	for (const key in params) {
+		if (Object.prototype.hasOwnProperty.call(params, key)) {
+			const paramName = String(key)
+
+			// Check for valid parameter name
+			if (!paramNamePattern.test(paramName)) {
+				throw new Error(
+					`Invalid parameter name: "${paramName}". It must start with a letter and can only contain letters, numbers, and underscores.`,
+				)
+			}
+
+			if (seenParams.has(paramName) || uniquePathParams.size !== pathParams.length) {
+				throw new Error(
+					`Found duplicated params with name "${paramName}" or path "${path}". Only the last one will be available.`,
+				)
+			}
+
+			seenParams.add(paramName)
+
+			path = path.replace(`:${paramName}`, encodeURIComponent(String(params[key])))
+		}
+	}
+
+	return baseUrl ? `${baseUrl}${path}` : path
+}
+
 export const mergeConfigs = (config: Options, methodConfig: MethodConfig, method: HttpMethod) => {
 	const url = config.url ? `${config.url}/`.replace(/\/+$/, "/") : undefined
 	const path = methodConfig.path.replace(/^\//, "")
 
-	const base_uri = new URL(path, url)
+	const base_uri = methodConfig.params
+		? new URL(replaceUrlParams(url, path, methodConfig.params))
+		: new URL(path, url)
 
 	const abortController = new AbortController()
 	let headersConfig = new Headers({

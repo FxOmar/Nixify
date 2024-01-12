@@ -8,6 +8,13 @@ type ResponseTypes = {
     blob: "*/*";
 };
 type XOR<T, U> = T | U extends object ? (T & Record<string, never>) | (U & Record<string, never>) : T | U;
+type RequestDelayFunction = (attempt: number, response: Response | null) => number;
+type RequestRetryOnFunction = (attempt: number, response: Response | null) => boolean | Promise<boolean>;
+interface RequestInitRetryParams {
+    retries?: number | boolean;
+    retryDelay?: number | RequestDelayFunction;
+    retryOn?: number[] | RequestRetryOnFunction;
+}
 interface Options {
     url: string;
     headers?: {
@@ -16,9 +23,24 @@ interface Options {
     hooks?: {
         beforeRequest: (request: Request) => void;
         afterResponse: (request: Request, response: Response, config: any) => void;
+        beforeRetry: (request: Request, response: Response, attempt: number, delay: number) => void;
     };
     qs?: StringifyOptions;
     timeout?: number | false;
+    retryConfig?: RequestInitRetryParams;
+}
+interface MethodConfig extends Omit<RequestInit, "method"> {
+    path?: string;
+    qs?: {
+        [name: string]: queryType | number;
+    };
+    json?: object;
+    responseType?: ResponseType;
+    timeout?: number | false;
+    retry?: RequestInitRetryParams;
+    params?: {
+        [key: string]: string | number;
+    };
 }
 type ServiceConfig = {
     [key: string]: Options;
@@ -41,6 +63,7 @@ interface RequestMethods {
     options: RequestMethodsType;
     beforeRequest: (fn: (request: Request) => void) => void;
     afterResponse: (fn: (request: Request, response: Response, config: any) => void) => void;
+    beforeRetry: (fn: (request: Request, response: Response, attempt: number, delay: number) => void) => void;
     setHeaders: (newHeaders: {
         [key: string]: string;
     }) => void;
@@ -54,15 +77,6 @@ interface ResponseInterface<T> {
     status: number;
     statusText: string;
     config: Request;
-}
-interface MethodConfig extends Omit<RequestInit, "method"> {
-    path?: string;
-    qs?: {
-        [name: string]: queryType | number;
-    };
-    json?: object;
-    responseType?: ResponseType;
-    timeout?: number | false;
 }
 type queryType = string | URLSearchParams | Record<string, string> | string[][];
 interface NormalizedOptions extends RequestInit, Omit<Options, "headers"> {
@@ -87,4 +101,4 @@ type RequestInitRegistry = {
     [K in keyof CombinedRequestInit]-?: true;
 };
 
-export type { HttpMethod, MethodConfig, NormalizedOptions, Options, RequestInitRegistry, RequestMethods, RequestMethodsType, ResponseHandlers, ResponseInterface, ResponseType, ResponseTypes, ServiceConfig, ServiceReqMethods, Stringify, XOR, queryType };
+export type { HttpMethod, MethodConfig, NormalizedOptions, Options, RequestInitRegistry, RequestInitRetryParams, RequestMethods, RequestMethodsType, ResponseHandlers, ResponseInterface, ResponseType, ResponseTypes, ServiceConfig, ServiceReqMethods, Stringify, XOR, queryType };
