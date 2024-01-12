@@ -24,6 +24,12 @@ To import Nixify you have to use ECMAScript
 ```javascript
 import Nixify from "nixify";
 ```
+Using jsdelivr:
+```html
+<script type="module">
+  import nixify from 'https://cdn.jsdelivr.net/npm/nixify@3.1.1/+esm'
+</script>
+```
 
 ## Nixify Features
 
