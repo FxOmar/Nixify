@@ -57,19 +57,19 @@ describe("Real-life data fetching 🗿.", () => {
 		expect(typeof data).toBe("object")
 	})
 
-	// it("Should fetch without creating new instance.", async () => {
-	// 	const { data, status } = await Nixify.get<string>(`${BASE_URL}/text`).text()
+	it("Should fetch without creating new instance.", async () => {
+		const { data, status } = await Nixify.get<string>(`${BASE_URL}/text`).text()
 
-	// 	expect(status).toBe(200)
-	// 	expect(data).toBe("Hello, world")
-	// })
+		expect(status).toBe(200)
+		expect(data).toBe("Hello, world")
+	})
 
-	// it("Should fetch data with the given interface.", async () => {
-	// 	const { data, status } = await Nixify.get<{ message: string }>(`${BASE_URL}/book`)
+	it("Should fetch data with the given interface.", async () => {
+		const { data, status } = await Nixify.get<{ message: string }>(`${BASE_URL}/book`)
 
-	// 	expect(status).toBe(200)
-	// 	expect(data.message).toBe("Hello, world")
-	// })
+		expect(status).toBe(200)
+		expect(data.message).toBe("Hello, world")
+	})
 
 	it("Should set header using function helper setHeader", async () => {
 		const http2 = Nixify.create({
