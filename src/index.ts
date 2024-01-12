@@ -144,6 +144,41 @@ const createHTTPMethods = (config?: Options): RequestMethods => {
 }
 
 /**
+ * Creates hooks for a configuration object.
+ *
+ * @param {Object} config - The configuration object.
+ * @returns {Object} An object containing hooks methods.
+ * @throws {TypeError} Throws an error if a hook has already been invoked within the configuration.
+ *
+ * @example
+ * const serviceConfig = {};
+ * const myHooks = createHooks(serviceConfig);
+ */
+const createHooks = (config: Options) => {
+	/**
+	 * @type {string[]}
+	 * Array of supported hook names.
+	 */
+	const hooks = ["beforeRetry", "afterResponse", "beforeRequest"]
+
+	return Object.fromEntries(
+		hooks.map((hookName) => [
+			hookName,
+			(fn) => {
+				if (config?.hooks?.[hookName]) {
+					throw new TypeError(
+						`${hookName} has already been invoked within configuration.`,
+					)
+				}
+
+				// Ensure that config.hooks is defined before accessing its properties
+				Object.assign(config, { hooks: { ...(config.hooks || {}), [hookName]: fn } })
+			},
+		]),
+	)
+}
+
+/**
  * Factory function for creating an HTTP client with configurable service instances.
  *
  * @function create
@@ -187,36 +222,7 @@ const create = <T extends ServiceConfig>(config?: T) => {
 			service,
 			{
 				...createHTTPMethods(serviceConfig),
-				beforeRequest: (fn) => {
-					if (serviceConfig?.hooks?.beforeRequest) {
-						throw new TypeError(
-							"beforeRequest has already been invoked within configuration.",
-						)
-					}
-
-					serviceConfig.hooks = {}
-					serviceConfig.hooks.beforeRequest = fn
-				},
-				afterResponse: (fn) => {
-					if (serviceConfig?.hooks?.afterResponse) {
-						throw new TypeError(
-							"afterResponse has already been invoked within configuration.",
-						)
-					}
-
-					serviceConfig.hooks = {}
-					serviceConfig.hooks.afterResponse = fn
-				},
-				beforeRetry: (fn) => {
-					if (serviceConfig?.hooks?.beforeRetry) {
-						throw new TypeError(
-							"beforeRetry has already been invoked within configuration.",
-						)
-					}
-
-					serviceConfig.hooks = {}
-					serviceConfig.hooks.beforeRetry = fn
-				},
+				...createHooks(serviceConfig),
 				setHeaders: (newHeaders) =>
 					setHeaders((serviceConfig.headers = serviceConfig.headers || {}), newHeaders),
 			},
